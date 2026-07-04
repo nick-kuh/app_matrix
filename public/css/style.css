@@ -855,3 +855,393 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+/* ============================================================
+   TEAM PICKER (mobile — sem cadastro)
+   ============================================================ */
+.pick-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 420px;
+  padding: 20px 16px;
+  border: 1px solid var(--matrix-green-dim);
+  background: var(--panel);
+  box-shadow: 0 0 30px rgba(0,255,65,0.12), inset 0 0 40px rgba(0,255,65,0.05);
+}
+.pick-label {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--matrix-green);
+  text-shadow: 0 0 8px rgba(0,255,65,0.6);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  text-align: center;
+}
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.team-card {
+  padding: 14px 14px;
+  border: 1px solid var(--matrix-green-dark);
+  background: rgba(0, 8, 2, 0.85);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: inherit;
+  width: 100%;
+  color: inherit;
+  text-align: left;
+}
+.team-card:hover, .team-card:active {
+  border-color: var(--matrix-green);
+  background: rgba(0, 40, 8, 0.75);
+  box-shadow: 0 0 18px rgba(0,255,65,0.35);
+  transform: translateX(2px);
+}
+.team-card .team-icon {
+  font-size: 18px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 8px rgba(0,255,65,0.6);
+  min-width: 22px;
+}
+.team-card .team-info {
+  flex: 1;
+  min-width: 0;
+}
+.team-card .team-info .n {
+  font-size: 13px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 6px rgba(0,255,65,0.4);
+  letter-spacing: 0.05em;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.team-card .team-info .b {
+  font-size: 10px;
+  color: var(--matrix-green-dim);
+  margin-top: 2px;
+  letter-spacing: 0.1em;
+}
+.team-card .team-enter {
+  font-size: 12px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.2em;
+}
+.team-card:hover .team-enter {
+  color: var(--matrix-green);
+  text-shadow: 0 0 8px rgba(0,255,65,0.6);
+}
+.pick-hint {
+  font-size: 10px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.2em;
+  margin-top: 14px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+/* ============================================================
+   PIX-STYLE INVEST MODAL
+   ============================================================ */
+.pix-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 8, 2, 0.85);
+  backdrop-filter: blur(4px);
+  animation: pix-fade-in 0.2s ease;
+}
+@keyframes pix-fade-in {
+  from { background: rgba(0, 8, 2, 0); backdrop-filter: blur(0); }
+  to { background: rgba(0, 8, 2, 0.85); backdrop-filter: blur(4px); }
+}
+.pix-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: rgba(0, 14, 3, 0.98);
+  border: 1px solid var(--matrix-green);
+  border-bottom: none;
+  box-shadow: 0 -6px 40px rgba(0,255,65,0.35);
+  padding: 22px 18px 30px;
+  animation: pix-slide-in 0.25s ease;
+  position: relative;
+}
+@keyframes pix-slide-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.pix-close {
+  position: absolute;
+  top: 8px; right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--matrix-green-dim);
+  font-size: 26px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 8px;
+}
+.pix-close:hover { color: var(--matrix-green); }
+
+.pix-kicker {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.pix-target {
+  font-size: 15px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 6px rgba(0,255,65,0.5);
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+.pix-balance-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 8px 0;
+  border-top: 1px dashed var(--matrix-green-dark);
+  border-bottom: 1px dashed var(--matrix-green-dark);
+  margin-bottom: 14px;
+}
+.pix-balance-v {
+  color: var(--matrix-green);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px rgba(0,255,65,0.4);
+}
+
+.pix-amount {
+  text-align: center;
+  font-size: 42px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 14px rgba(0,255,65,0.55);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  margin: 6px 0 14px;
+  padding: 12px 0;
+  border: 1px solid var(--matrix-green-dim);
+  background: rgba(0, 8, 2, 0.8);
+}
+.pix-amount.over {
+  color: var(--matrix-red);
+  text-shadow: 0 0 14px rgba(255,34,68,0.55);
+  border-color: var(--matrix-red);
+  animation: shake 0.25s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.pix-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.pix-quick .chip {
+  padding: 8px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
+
+.pix-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.pix-pad button {
+  padding: 16px 0;
+  border: 1px solid var(--matrix-green-dark);
+  background: rgba(0, 8, 2, 0.85);
+  color: var(--matrix-green);
+  font-family: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.08s;
+  font-variant-numeric: tabular-nums;
+}
+.pix-pad button:active {
+  background: rgba(0, 50, 12, 0.9);
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 12px rgba(0,255,65,0.4);
+}
+.pix-pad .pad-000 { font-size: 15px; }
+.pix-pad .pad-del { color: var(--matrix-green-dim); }
+
+.pix-confirm {
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  padding: 15px;
+}
+.pix-confirm.danger {
+  border-color: var(--matrix-red);
+  color: var(--matrix-red);
+  text-shadow: 0 0 8px rgba(255,34,68,0.6);
+  box-shadow: 0 0 18px rgba(255,34,68,0.25);
+}
+
+/* ============================================================
+   RECEIPT (comprovante)
+   ============================================================ */
+.receipt-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 8, 2, 0.9);
+  backdrop-filter: blur(6px);
+  animation: pix-fade-in 0.2s ease;
+}
+.receipt-sheet {
+  width: min(92vw, 380px);
+  padding: 30px 24px;
+  border: 1px solid var(--matrix-green);
+  background: rgba(0, 14, 3, 0.98);
+  box-shadow: 0 0 40px rgba(0,255,65,0.45);
+  text-align: center;
+  animation: receipt-in 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+@keyframes receipt-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.receipt-check {
+  font-size: 58px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 22px rgba(0,255,65,0.7), 0 0 60px rgba(0,255,65,0.35);
+  margin-bottom: 6px;
+  animation: check-pop 0.5s ease;
+}
+@keyframes check-pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.receipt-title {
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--matrix-green);
+  text-shadow: 0 0 8px rgba(0,255,65,0.55);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.receipt-amount {
+  font-size: 34px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 14px rgba(0,255,65,0.55);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 12px;
+}
+.receipt-info {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+}
+.receipt-time {
+  font-size: 10px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.2em;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   ACTION ROW (Investir / Retirar side by side)
+   ============================================================ */
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.action-row .btn {
+  padding: 14px 10px;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.position-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--matrix-green);
+  background: rgba(0, 40, 8, 0.55);
+  margin-top: 12px;
+  box-shadow: inset 0 0 24px rgba(0,255,65,0.08);
+}
+.position-badge .l {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+}
+.position-badge .v {
+  color: var(--matrix-green);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(0,255,65,0.5);
+}
+
+/* ============================================================
+   FEED (posicoes dos times no case)
+   ============================================================ */
+.feed-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--matrix-green-dark);
+}
+.feed-row:last-child { border-bottom: none; }
+.feed-row .team {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+.feed-row .team.me {
+  color: var(--matrix-green);
+  text-shadow: 0 0 6px rgba(0,255,65,0.5);
+  font-weight: bold;
+}
+.feed-row .amt {
+  color: var(--matrix-green);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+/* ============================================================
+   MOBILE STATUS BLOCKS (auxiliares)
+   ============================================================ */
+.w-status {
+  font-size: 11px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.25em;
+  margin-bottom: 8px;
+}

@@ -12,34 +12,21 @@
   <div class="scanlines"></div>
   <div class="vignette"></div>
 
-  <!-- ===================== LOGIN / REGISTER ===================== -->
-  <section id="auth" class="auth-screen">
+  <!-- ===================== ESCOLHER TIME (login) ===================== -->
+  <section id="pick-team" class="auth-screen">
     <h1 class="glitch auth-title" data-text="SHARK TANK">SHARK TANK</h1>
     <div class="auth-tagline">// bank of the tank<span class="cursor">&nbsp;</span></div>
     <pre id="shark-ascii"></pre>
 
-    <div class="auth-card">
-      <div class="auth-tabs">
-        <button class="auth-tab active" data-mode="register">Criar conta</button>
-        <button class="auth-tab" data-mode="login">Entrar</button>
+    <div class="pick-card">
+      <div class="pick-label">&gt; SELECIONE SEU TIME</div>
+      <div class="team-list" id="team-list">
+        <div class="empty">Carregando...</div>
       </div>
-
-      <div class="field">
-        <label for="auth-name">Nome do investidor</label>
-        <input id="auth-name" type="text" maxlength="24" autocomplete="off" placeholder="ex: nick" />
-      </div>
-      <div class="field">
-        <label for="auth-pin">PIN (4 a 6 dígitos)</label>
-        <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="****" />
-      </div>
-
-      <div class="error" id="auth-error"></div>
-
-      <button id="auth-submit" class="btn">&gt; ENTRAR NO TANQUE</button>
     </div>
 
-    <p style="text-align:center;font-size:10px;color:var(--matrix-green-dim);letter-spacing:0.2em;margin-top:14px;">
-      cada investidor começa com um saldo inicial
+    <p class="pick-hint">
+      cada time compartilha o saldo &middot; qualquer membro pode investir
     </p>
   </section>
 
@@ -48,14 +35,14 @@
     <header class="top-bar">
       <div class="top-row">
         <div class="top-brand">SHARK <span class="dim">TANK BANK</span></div>
-        <button id="logout-btn" class="chip">SAIR</button>
+        <button id="logout-btn" class="chip">TROCAR TIME</button>
       </div>
       <div class="balance-strip">
         <div>
-          <div class="l">Saldo</div>
-          <div class="name" id="user-name">—</div>
+          <div class="l">Saldo do time</div>
+          <div class="name" id="team-name">—</div>
         </div>
-        <div class="v" id="user-balance">$ 0</div>
+        <div class="v" id="team-balance">$ 0</div>
       </div>
 
       <div class="case-strip-label">
@@ -70,7 +57,7 @@
       <section id="tab-case" class="tab active">
         <div id="case-view">
           <div class="waiting-panel">
-            <div style="font-size:11px;color:var(--matrix-green-dim);letter-spacing:0.25em;">&gt; STATUS</div>
+            <div class="w-status">&gt; STATUS</div>
             <div class="w-blink">AGUARDANDO CASE_</div>
             <div class="w-hint">o telão vai sortear o próximo pitch a qualquer momento</div>
           </div>
@@ -79,20 +66,24 @@
 
       <!-- Wallet tab -->
       <section id="tab-wallet" class="tab">
-        <div class="section-title">&gt; meus investimentos</div>
+        <div class="section-title">&gt; posições do time</div>
+        <div class="panel" id="my-positions">
+          <div class="empty">Ainda sem posições.</div>
+        </div>
+        <div class="section-title">&gt; extrato</div>
         <div class="panel">
-          <div id="my-invs">
-            <div class="empty">Você ainda não investiu em nenhum case.</div>
+          <div id="my-transactions">
+            <div class="empty">Sem movimentações ainda.</div>
           </div>
         </div>
       </section>
 
       <!-- Ranking tab -->
       <section id="tab-rank" class="tab">
-        <div class="section-title">&gt; ranking dos investidores</div>
+        <div class="section-title">&gt; ranking dos times</div>
         <div class="panel">
           <div id="rank-list">
-            <div class="empty">Sem investidores ainda.</div>
+            <div class="empty">Carregando...</div>
           </div>
         </div>
       </section>
@@ -109,6 +100,58 @@
         <span class="ico">▲</span>Ranking
       </button>
     </nav>
+  </div>
+
+  <!-- ===================== PIX MODAL ===================== -->
+  <div id="pix-modal" class="pix-modal" style="display:none">
+    <div class="pix-sheet">
+      <button class="pix-close" id="pix-close">×</button>
+      <div class="pix-kicker" id="pix-kicker">INVESTIR</div>
+      <div class="pix-target" id="pix-target">—</div>
+      <div class="pix-balance-line">
+        <span id="pix-balance-l">Saldo disponível</span>
+        <span class="pix-balance-v" id="pix-balance-v">$ 0</span>
+      </div>
+
+      <div class="pix-amount" id="pix-amount">$ 0</div>
+
+      <div class="pix-quick" id="pix-quick">
+        <button class="chip" data-q="1000">+1K</button>
+        <button class="chip" data-q="5000">+5K</button>
+        <button class="chip" data-q="10000">+10K</button>
+        <button class="chip" data-q="50000">+50K</button>
+        <button class="chip" data-q="100000">+100K</button>
+        <button class="chip" data-max="1">MAX</button>
+      </div>
+
+      <div class="pix-pad">
+        <button data-k="1">1</button>
+        <button data-k="2">2</button>
+        <button data-k="3">3</button>
+        <button data-k="4">4</button>
+        <button data-k="5">5</button>
+        <button data-k="6">6</button>
+        <button data-k="7">7</button>
+        <button data-k="8">8</button>
+        <button data-k="9">9</button>
+        <button data-k="000" class="pad-000">000</button>
+        <button data-k="0">0</button>
+        <button data-k="del" class="pad-del">←</button>
+      </div>
+
+      <button id="pix-confirm" class="btn pix-confirm">&gt; CONFIRMAR</button>
+    </div>
+  </div>
+
+  <!-- ===================== RECEIPT (comprovante) ===================== -->
+  <div id="receipt" class="receipt-modal" style="display:none">
+    <div class="receipt-sheet">
+      <div class="receipt-check">✓</div>
+      <div class="receipt-title" id="receipt-title">TRANSAÇÃO OK</div>
+      <div class="receipt-amount" id="receipt-amount">$ 0</div>
+      <div class="receipt-info" id="receipt-info">—</div>
+      <div class="receipt-time" id="receipt-time">—</div>
+    </div>
   </div>
 
   <div id="toast-host"></div>

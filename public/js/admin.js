@@ -63,7 +63,7 @@ async function refreshState() {
     const d = await api('/api/admin/state');
     $('#starting-balance').value = d.startingBalance;
     renderCases(d.cases);
-    renderUsers(d.users);
+    renderUsers(d.teams || []);
   } catch {}
 }
 
@@ -107,18 +107,18 @@ function renderCases(cases) {
   });
 }
 
-function renderUsers(users) {
+function renderUsers(teams) {
   const box = $('#users-list');
-  if (!users.length) {
-    box.innerHTML = '<div class="empty">Nenhum jogador ainda.</div>';
+  if (!teams.length) {
+    box.innerHTML = '<div class="empty">Nenhum time.</div>';
     return;
   }
-  const sorted = [...users].sort((a, b) => b.balance - a.balance);
-  box.innerHTML = sorted.map((u, i) => `
+  const sorted = [...teams].sort((a, b) => b.balance - a.balance);
+  box.innerHTML = sorted.map((t, i) => `
     <div class="rank-row ${i === 0 ? 'top' : ''}">
       <div class="rank-pos">${i + 1}</div>
-      <div class="rank-name">@${escapeHtml(u.name)}</div>
-      <div class="rank-bal">${fmtMoney(u.balance)}</div>
+      <div class="rank-name">${escapeHtml(t.name)}</div>
+      <div class="rank-bal">${fmtMoney(t.balance)}</div>
     </div>
   `).join('');
 }
@@ -156,18 +156,18 @@ $('#save-starting').addEventListener('click', async () => {
 });
 
 $('#reset-keep').addEventListener('click', async () => {
-  if (!confirm('Reset o jogo mantendo os jogadores? Todos voltam ao saldo inicial e os cases sao apagados.')) return;
+  if (!confirm('Reset o jogo mantendo os times? Todos voltam ao saldo inicial e os cases sao apagados.')) return;
   try {
-    await api('/api/admin/reset', { method: 'POST', body: { keepUsers: true } });
+    await api('/api/admin/reset', { method: 'POST', body: { keepTeams: true } });
     toast('> jogo resetado');
     refreshState();
   } catch { toast('Erro', 'error'); }
 });
 
 $('#reset-all').addEventListener('click', async () => {
-  if (!confirm('APAGA TUDO: jogadores, cases, investimentos. Certeza?')) return;
+  if (!confirm('APAGA TUDO. Certeza?')) return;
   try {
-    await api('/api/admin/reset', { method: 'POST', body: { keepUsers: false } });
+    await api('/api/admin/reset', { method: 'POST', body: { keepTeams: false } });
     toast('> tudo resetado');
     refreshState();
   } catch { toast('Erro', 'error'); }

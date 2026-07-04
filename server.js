@@ -11,7 +11,17 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'shark';
-const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 50000);
+const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 500000);
+
+// Times pre-cadastrados (mesmas areas do sorteio do telao)
+const DEFAULT_TEAMS = [
+  'STRATEGY',
+  'DATAHUB',
+  'FOCUS MARKET',
+  'CUSTOMER DEVELOPMENT',
+  'CONSUMER',
+  'BUSINESS OPERATIONS (MAKE)',
+];
 
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
@@ -19,11 +29,11 @@ if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
 function emptyDb() {
   return {
-    users: [],
-    sessions: {},
+    teams: [],        // [{id, name (area em maiusculo), balance, createdAt}]
+    sessions: {},     // { sid: teamId }
     cases: [],
-    investments: [],
-    areas: [],              // catalogo enviado pelo telao
+    investments: [],  // [{id, teamId, caseId, amount, payout, createdAt}] — 1 registro por transacao (invest + / withdraw -)
+    areas: [],
     startingBalance: STARTING_BALANCE,
   };
 }
@@ -39,6 +49,20 @@ if (existsSync(DATA_FILE)) {
   }
 }
 
+// Garante que os times default existem
+function ensureTeams() {
+  for (const name of DEFAULT_TEAMS) {
+    if (!db.teams.find((t) => t.name === name)) {
+      db.teams.push({
+        id: newId(),
+        name,
+        balance: db.startingBalance,
+        createdAt: Date.now(),
+      });
+    }
+  }
+}
+
 let saveTimer = null;
 function save() {
   if (saveTimer) return;
@@ -50,6 +74,9 @@ function save() {
 
 const hash = (s) => createHash('sha256').update(s).digest('hex');
 const newId = () => randomBytes(8).toString('hex');
+
+ensureTeams();
+save();
 
 // ---------- SSE broadcaster ----------
 
@@ -68,20 +95,20 @@ app.use(express.json({ limit: '512kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- auth ----------
+// ---------- auth (team-based) ----------
 
-function currentUser(req) {
+function currentTeam(req) {
   const sid = req.cookies?.sid;
   if (!sid) return null;
-  const userId = db.sessions[sid];
-  if (!userId) return null;
-  return db.users.find((u) => u.id === userId) || null;
+  const teamId = db.sessions[sid];
+  if (!teamId) return null;
+  return db.teams.find((t) => t.id === teamId) || null;
 }
 
-function requireUser(req, res, next) {
-  const u = currentUser(req);
-  if (!u) return res.status(401).json({ error: 'not_authenticated' });
-  req.user = u;
+function requireTeam(req, res, next) {
+  const t = currentTeam(req);
+  if (!t) return res.status(401).json({ error: 'not_authenticated' });
+  req.team = t;
   next();
 }
 
@@ -92,48 +119,27 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.post('/api/register', (req, res) => {
-  const rawName = String(req.body?.name || '').trim();
-  const pin = String(req.body?.pin || '').trim();
-  if (!rawName || rawName.length < 2 || rawName.length > 24) {
-    return res.status(400).json({ error: 'nome_invalido' });
-  }
-  if (!/^\d{4,6}$/.test(pin)) {
-    return res.status(400).json({ error: 'pin_invalido' });
-  }
-  const name = rawName;
-  const key = name.toLowerCase();
-  if (db.users.some((u) => u.name.toLowerCase() === key)) {
-    return res.status(409).json({ error: 'nome_ja_existe' });
-  }
-  const user = {
-    id: newId(),
-    name,
-    pinHash: hash(pin),
-    balance: db.startingBalance,
-    createdAt: Date.now(),
-  };
-  db.users.push(user);
-  const sid = newId() + newId();
-  db.sessions[sid] = user.id;
-  save();
-  res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 24 * 3600 * 1000 });
-  broadcast('user', { id: user.id, name: user.name });
-  res.json({ id: user.id, name: user.name, balance: user.balance });
+// Retorna a lista de times (usada no picker do mobile)
+app.get('/api/teams', (req, res) => {
+  const list = db.teams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    balance: t.balance,
+  }));
+  res.json({ teams: list });
 });
 
-app.post('/api/login', (req, res) => {
-  const name = String(req.body?.name || '').trim();
-  const pin = String(req.body?.pin || '').trim();
-  const user = db.users.find((u) => u.name.toLowerCase() === name.toLowerCase());
-  if (!user || user.pinHash !== hash(pin)) {
-    return res.status(401).json({ error: 'credenciais_invalidas' });
-  }
+// Entrar como um time (sem senha, pelo nome da area)
+app.post('/api/team-login', (req, res) => {
+  const name = String(req.body?.name || '').trim().toUpperCase();
+  const team = db.teams.find((t) => t.name.toUpperCase() === name);
+  if (!team) return res.status(404).json({ error: 'time_nao_encontrado' });
+
   const sid = newId() + newId();
-  db.sessions[sid] = user.id;
+  db.sessions[sid] = team.id;
   save();
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 24 * 3600 * 1000 });
-  res.json({ id: user.id, name: user.name, balance: user.balance });
+  res.json({ id: team.id, name: team.name, balance: team.balance });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -147,18 +153,35 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/me', (req, res) => {
-  const u = currentUser(req);
-  if (!u) return res.json({ user: null });
+  const t = currentTeam(req);
+  if (!t) return res.json({ team: null });
   res.json({
-    user: { id: u.id, name: u.name, balance: u.balance },
+    team: { id: t.id, name: t.name, balance: t.balance },
     startingBalance: db.startingBalance,
   });
 });
 
-// ---------- cases / investments ----------
+// ---------- helpers ----------
+
+// posicao liquida do time em um case (soma investimentos - retiradas)
+function teamPositionInCase(teamId, caseId) {
+  return db.investments
+    .filter((i) => i.teamId === teamId && i.caseId === caseId)
+    .reduce((s, i) => s + i.amount, 0);
+}
+
+// ---------- cases ----------
 
 function publicCase(c) {
   const invs = db.investments.filter((i) => i.caseId === c.id);
+  const totalRaised = invs.reduce((s, i) => s + Math.max(0, i.amount), 0);
+  const netByTeam = new Map();
+  for (const i of invs) {
+    netByTeam.set(i.teamId, (netByTeam.get(i.teamId) || 0) + i.amount);
+  }
+  const activeInvestors = [...netByTeam.values()].filter((v) => v > 0).length;
+  const netTotal = [...netByTeam.values()].reduce((s, v) => s + v, 0);
+
   return {
     id: c.id,
     area: c.area,
@@ -177,8 +200,9 @@ function publicCase(c) {
     multiplier: c.multiplier ?? null,
     createdAt: c.createdAt,
     resolvedAt: c.resolvedAt ?? null,
-    totalRaised: invs.reduce((s, i) => s + i.amount, 0),
-    investorCount: new Set(invs.map((i) => i.userId)).size,
+    totalRaised,        // soma bruta de todos os aportes (histórico)
+    netInvested: netTotal, // total liquido investido no case agora
+    investorCount: activeInvestors,
   };
 }
 
@@ -198,42 +222,33 @@ app.get('/api/cases/:id', (req, res) => {
   res.json({ case: publicCase(c) });
 });
 
+// feed publico do case: mostra as posicoes liquidas por time (sem individuais)
 app.get('/api/cases/:id/feed', (req, res) => {
-  const invs = db.investments
-    .filter((i) => i.caseId === req.params.id)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 30)
-    .map((i) => {
-      const user = db.users.find((u) => u.id === i.userId);
+  const invs = db.investments.filter((i) => i.caseId === req.params.id);
+  const byTeam = new Map();
+  for (const i of invs) {
+    const cur = byTeam.get(i.teamId) || { amount: 0, lastAt: 0 };
+    cur.amount += i.amount;
+    cur.lastAt = Math.max(cur.lastAt, i.createdAt);
+    byTeam.set(i.teamId, cur);
+  }
+  const rows = [...byTeam.entries()]
+    .filter(([, v]) => v.amount > 0)
+    .map(([teamId, v]) => {
+      const team = db.teams.find((t) => t.id === teamId);
       return {
-        id: i.id,
-        amount: i.amount,
-        createdAt: i.createdAt,
-        userName: user?.name || '???',
-      };
-    });
-  res.json({ investments: invs });
-});
-
-app.get('/api/cases/:id/investments', requireUser, (req, res) => {
-  const invs = db.investments
-    .filter((i) => i.caseId === req.params.id)
-    .map((i) => {
-      const user = db.users.find((u) => u.id === i.userId);
-      return {
-        id: i.id,
-        amount: i.amount,
-        payout: i.payout ?? null,
-        createdAt: i.createdAt,
-        userName: user?.name || '???',
-        isMine: i.userId === req.user.id,
+        teamId,
+        teamName: team?.name || '???',
+        amount: v.amount,
+        lastAt: v.lastAt,
       };
     })
-    .sort((a, b) => b.createdAt - a.createdAt);
-  res.json({ investments: invs });
+    .sort((a, b) => b.amount - a.amount);
+  res.json({ positions: rows });
 });
 
-app.post('/api/cases/:id/invest', requireUser, (req, res) => {
+// Investir (aporte)
+app.post('/api/cases/:id/invest', requireTeam, (req, res) => {
   const c = db.cases.find((x) => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
   if (c.status !== 'open') return res.status(400).json({ error: 'caso_fechado' });
@@ -241,33 +256,84 @@ app.post('/api/cases/:id/invest', requireUser, (req, res) => {
   if (!Number.isFinite(amount) || amount <= 0) {
     return res.status(400).json({ error: 'valor_invalido' });
   }
-  if (amount > req.user.balance) {
+  if (amount > req.team.balance) {
     return res.status(400).json({ error: 'saldo_insuficiente' });
   }
-  req.user.balance -= amount;
+  req.team.balance -= amount;
   const inv = {
     id: newId(),
-    userId: req.user.id,
+    teamId: req.team.id,
     caseId: c.id,
-    amount,
+    amount,           // positivo = aporte
     payout: null,
     createdAt: Date.now(),
   };
   db.investments.push(inv);
   save();
-  broadcast('investment', { caseId: c.id, userName: req.user.name, amount });
-  res.json({ ok: true, balance: req.user.balance, investment: inv });
+  broadcast('investment', {
+    caseId: c.id,
+    teamId: req.team.id,
+    teamName: req.team.name,
+    amount,
+    action: 'invest',
+  });
+  res.json({
+    ok: true,
+    balance: req.team.balance,
+    position: teamPositionInCase(req.team.id, c.id),
+  });
 });
 
-app.get('/api/investments/mine', requireUser, (req, res) => {
+// Retirar (parcial ou total)
+app.post('/api/cases/:id/withdraw', requireTeam, (req, res) => {
+  const c = db.cases.find((x) => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
+  if (c.status !== 'open') return res.status(400).json({ error: 'caso_fechado' });
+  const amountRaw = req.body?.amount;
+  const isAll = amountRaw === 'all' || amountRaw === undefined;
+  const current = teamPositionInCase(req.team.id, c.id);
+  if (current <= 0) return res.status(400).json({ error: 'sem_posicao' });
+
+  const amount = isAll ? current : Math.floor(Number(amountRaw));
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'valor_invalido' });
+  }
+  if (amount > current) return res.status(400).json({ error: 'valor_maior_que_posicao' });
+
+  req.team.balance += amount;
+  db.investments.push({
+    id: newId(),
+    teamId: req.team.id,
+    caseId: c.id,
+    amount: -amount,  // negativo = retirada
+    payout: null,
+    createdAt: Date.now(),
+  });
+  save();
+  broadcast('investment', {
+    caseId: c.id,
+    teamId: req.team.id,
+    teamName: req.team.name,
+    amount,
+    action: 'withdraw',
+  });
+  res.json({
+    ok: true,
+    balance: req.team.balance,
+    position: teamPositionInCase(req.team.id, c.id),
+  });
+});
+
+// Historico do meu time
+app.get('/api/investments/mine', requireTeam, (req, res) => {
   const invs = db.investments
-    .filter((i) => i.userId === req.user.id)
+    .filter((i) => i.teamId === req.team.id)
     .sort((a, b) => b.createdAt - a.createdAt)
     .map((i) => {
       const c = db.cases.find((x) => x.id === i.caseId);
       return {
         id: i.id,
-        amount: i.amount,
+        amount: i.amount,        // pode ser negativo (retirada)
         payout: i.payout ?? null,
         createdAt: i.createdAt,
         caseId: i.caseId,
@@ -276,24 +342,33 @@ app.get('/api/investments/mine', requireUser, (req, res) => {
         caseStatus: c?.status || 'unknown',
       };
     });
-  res.json({ investments: invs });
+
+  // agrega tambem por case (posicao liquida)
+  const byCase = new Map();
+  for (const inv of invs) {
+    const cur = byCase.get(inv.caseId) || { caseId: inv.caseId, caseNome: inv.caseNome, caseArea: inv.caseArea, caseStatus: inv.caseStatus, position: 0, payout: 0 };
+    cur.position += inv.amount;
+    if (inv.payout != null) cur.payout += inv.payout;
+    byCase.set(inv.caseId, cur);
+  }
+  const positions = [...byCase.values()];
+
+  res.json({ transactions: invs, positions });
 });
 
 app.get('/api/ranking', (req, res) => {
-  const list = db.users
-    .map((u) => ({ id: u.id, name: u.name, balance: u.balance }))
+  const list = db.teams
+    .map((t) => ({ id: t.id, name: t.name, balance: t.balance }))
     .sort((a, b) => b.balance - a.balance);
   res.json({ ranking: list });
 });
 
 // ---------- integracao com o telao ----------
 
-// telaoKey = identificador unico do case baseado em area + nome
 function telaoKey(area, nome) {
   return String(area).trim() + '::' + String(nome).trim();
 }
 
-// telao envia o catalogo completo (AREAS) 1x no boot
 app.post('/api/telao/areas', (req, res) => {
   const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
   db.areas = areas;
@@ -301,8 +376,6 @@ app.post('/api/telao/areas', (req, res) => {
   res.json({ ok: true, count: areas.length });
 });
 
-// telao envia o estado do sorteio a cada mudanca
-// results: [{ area: "STRATEGY", caso: { nome, autor, desafio, ... } }]
 app.post('/api/telao/state', (req, res) => {
   const results = Array.isArray(req.body?.results) ? req.body.results : [];
   let created = 0;
@@ -329,7 +402,7 @@ app.post('/api/telao/state', (req, res) => {
       pos: idx + 1,
       status: 'open',
       multiplier: null,
-      createdAt: Date.now() + idx, // preserva ordem mesmo em batch
+      createdAt: Date.now() + idx,
       resolvedAt: null,
     };
     db.cases.push(c);
@@ -344,7 +417,7 @@ app.post('/api/telao/state', (req, res) => {
 app.post('/api/telao/reset', (req, res) => {
   db.cases = [];
   db.investments = [];
-  for (const u of db.users) u.balance = db.startingBalance;
+  for (const t of db.teams) t.balance = db.startingBalance;
   save();
   broadcast('reset', {});
   res.json({ ok: true });
@@ -381,12 +454,32 @@ app.post('/api/admin/cases/:id/close', requireAdmin, (req, res) => {
   c.status = 'closed';
   c.multiplier = multiplier;
   c.resolvedAt = Date.now();
+
+  // paga cada time proporcional à posicao liquida
+  const positions = new Map();
   for (const inv of db.investments.filter((i) => i.caseId === c.id)) {
-    const payout = Math.floor(inv.amount * multiplier);
-    inv.payout = payout;
-    const u = db.users.find((x) => x.id === inv.userId);
-    if (u) u.balance += payout;
+    positions.set(inv.teamId, (positions.get(inv.teamId) || 0) + inv.amount);
   }
+  for (const [teamId, pos] of positions.entries()) {
+    if (pos <= 0) continue;
+    const payout = Math.floor(pos * multiplier);
+    const team = db.teams.find((t) => t.id === teamId);
+    if (!team) continue;
+    team.balance += payout;
+    // marca no ultimo aporte positivo deste time como payout consolidado
+    // (mais simples: cria uma "transacao" de payout separada)
+    db.investments.push({
+      id: newId(),
+      teamId,
+      caseId: c.id,
+      amount: 0,
+      payout,
+      createdAt: Date.now() + 1,
+      isPayout: true,
+      basePosition: pos,
+    });
+  }
+
   save();
   const pc = publicCase(c);
   broadcast('case-closed', pc);
@@ -400,9 +493,15 @@ app.delete('/api/admin/cases/:id', requireAdmin, (req, res) => {
   if (c.status === 'closed') {
     return res.status(400).json({ error: 'nao_pode_apagar_fechado' });
   }
+  // devolve o dinheiro dos times (posicao liquida)
+  const positions = new Map();
   for (const inv of db.investments.filter((i) => i.caseId === c.id)) {
-    const u = db.users.find((x) => x.id === inv.userId);
-    if (u) u.balance += inv.amount;
+    positions.set(inv.teamId, (positions.get(inv.teamId) || 0) + inv.amount);
+  }
+  for (const [teamId, pos] of positions.entries()) {
+    if (pos <= 0) continue;
+    const team = db.teams.find((t) => t.id === teamId);
+    if (team) team.balance += pos;
   }
   db.investments = db.investments.filter((i) => i.caseId !== c.id);
   db.cases.splice(idx, 1);
@@ -413,7 +512,7 @@ app.delete('/api/admin/cases/:id', requireAdmin, (req, res) => {
 
 app.get('/api/admin/state', requireAdmin, (req, res) => {
   res.json({
-    users: db.users.map((u) => ({ id: u.id, name: u.name, balance: u.balance })),
+    teams: db.teams.map((t) => ({ id: t.id, name: t.name, balance: t.balance })),
     cases: db.cases.map(publicCase),
     startingBalance: db.startingBalance,
   });
@@ -428,13 +527,14 @@ app.post('/api/admin/starting-balance', requireAdmin, (req, res) => {
 });
 
 app.post('/api/admin/reset', requireAdmin, (req, res) => {
-  const keepUsers = !!req.body?.keepUsers;
-  if (keepUsers) {
-    for (const u of db.users) u.balance = db.startingBalance;
+  const keepTeams = !!req.body?.keepTeams;
+  if (keepTeams) {
+    for (const t of db.teams) t.balance = db.startingBalance;
     db.cases = [];
     db.investments = [];
   } else {
     db = { ...emptyDb(), startingBalance: db.startingBalance };
+    ensureTeams();
   }
   save();
   broadcast('reset', {});
@@ -477,7 +577,8 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Shark Tank Matrix Bank rodando na porta ${PORT}`);
-  console.log(`Admin: /admin  (senha: ${ADMIN_PASSWORD === 'shark' ? 'shark (padrao)' : 'via env'})`);
-  console.log(`Telao: /telao`);
+  console.log(`Shark Tank Bank rodando na porta ${PORT}`);
+  console.log(`  App:   /`);
+  console.log(`  Telao: /telao`);
+  console.log(`  Admin: /admin`);
 });
