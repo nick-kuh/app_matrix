@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SHARK TANK IA — Sorteio Matrix</title>
+<style>
+  :root {
+    --matrix-green: #00ff41;
+    --matrix-green-dim: #0a8f2e;
+    --matrix-green-dark: #003b00;
+    --matrix-red: #ff2244;
+    --matrix-blue: #2266ff;
+    --bg: #000000;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+    color: var(--matrix-green);
+    user-select: none;
+  }
+
+  /* ============ CHUVA DE CÓDIGO ============ */
+  #rain {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* ============ SCANLINES / CRT ============ */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.18) 3px,
+      rgba(0, 0, 0, 0) 4px
+    );
+    mix-blend-mode: multiply;
+  }
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 51;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+  }
+
+  /* ============ BARBATANA CRUZANDO A TELA ============ */
+  #fin {
+    position: fixed;
+    bottom: 4vh;
+    left: -220px;
+    z-index: 2;
+    width: 180px;
+    opacity: 0;
+    filter: drop-shadow(0 0 12px var(--matrix-green));
+    pointer-events: none;
+  }
+  #fin.swim {
+    animation: finswim 14s linear forwards;
+  }
+  @keyframes finswim {
+    0%   { transform: translateX(0) translateY(0); opacity: 0; }
+    5%   { opacity: 0.55; }
+    25%  { transform: translateX(28vw) translateY(-8px); }
+    50%  { transform: translateX(55vw) translateY(6px); opacity: 0.55; }
+    75%  { transform: translateX(82vw) translateY(-6px); }
+    95%  { opacity: 0.55; }
+    100% { transform: translateX(115vw) translateY(0); opacity: 0; }
+  }
+
+  /* ============ TELAS ============ */
+  .screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3vh 4vw;
+  }
+  .screen.active { display: flex; }
+
+  /* ============ TÍTULO GLITCH ============ */
+  .glitch {
+    position: relative;
+    font-size: clamp(1.5rem, 6vw, 5.2rem);
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 10px var(--matrix-green), 0 0 40px rgba(0,255,65,0.4);
+    white-space: nowrap;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .glitch::before {
+    left: 3px;
+    text-shadow: -2px 0 var(--matrix-red);
+    clip-path: inset(30% 0 40% 0);
+    animation: glitch-a 3.2s infinite linear alternate-reverse;
+  }
+  .glitch::after {
+    left: -3px;
+    text-shadow: 2px 0 var(--matrix-blue);
+    clip-path: inset(60% 0 10% 0);
+    animation: glitch-b 2.7s infinite linear alternate-reverse;
+  }
+  @keyframes glitch-a {
+    0%   { clip-path: inset(10% 0 80% 0); }
+    20%  { clip-path: inset(70% 0 5% 0); }
+    40%  { clip-path: inset(40% 0 40% 0); }
+    60%  { clip-path: inset(85% 0 5% 0); }
+    80%  { clip-path: inset(25% 0 55% 0); }
+    100% { clip-path: inset(55% 0 25% 0); }
+  }
+  @keyframes glitch-b {
+    0%   { clip-path: inset(65% 0 15% 0); }
+    20%  { clip-path: inset(15% 0 70% 0); }
+    40%  { clip-path: inset(50% 0 30% 0); }
+    60%  { clip-path: inset(5% 0 85% 0); }
+    80%  { clip-path: inset(75% 0 10% 0); }
+    100% { clip-path: inset(35% 0 45% 0); }
+  }
+
+  .tagline {
+    margin-top: 1.2vh;
+    font-size: clamp(0.9rem, 1.6vw, 1.3rem);
+    color: var(--matrix-green-dim);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+  .tagline .cursor {
+    display: inline-block;
+    width: 0.6em;
+    background: var(--matrix-green);
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ============ TUBARÃO ASCII ============ */
+  #shark-intro {
+    font-size: clamp(6px, 1.05vw, 13px);
+    line-height: 1.05;
+    letter-spacing: 0.05em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 6px rgba(0,255,65,0.8);
+    margin: 2.5vh 0 1vh;
+    animation: swim-bob 5s ease-in-out infinite;
+    white-space: pre;
+    text-align: left;
+  }
+  @keyframes swim-bob {
+    0%, 100% { transform: translateY(0) rotate(0.3deg); }
+    50%      { transform: translateY(-10px) rotate(-0.4deg); }
+  }
+
+  /* ============ PÍLULAS ============ */
+  .pills {
+    display: flex;
+    gap: 6vw;
+    margin-top: 3.5vh;
+    align-items: center;
+  }
+  .pill-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.4vh;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    transition: transform 0.25s;
+  }
+  .pill-wrap:hover { transform: scale(1.12); }
+  .pill {
+    width: 110px;
+    height: 46px;
+    border-radius: 25px;
+    position: relative;
+    transform: rotate(-25deg);
+  }
+  .pill::after {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 14px;
+    width: 40px;
+    height: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.45);
+    filter: blur(1px);
+  }
+  .pill.red {
+    background: linear-gradient(180deg, #ff5a70, #b30020 60%, #7a0016);
+    box-shadow: 0 0 25px rgba(255, 34, 68, 0.7);
+  }
+  .pill.blue {
+    background: linear-gradient(180deg, #6b9bff, #1440b3 60%, #0c2a78);
+    box-shadow: 0 0 25px rgba(34, 102, 255, 0.7);
+  }
+  .pill-wrap:hover .pill.red  { box-shadow: 0 0 45px rgba(255, 34, 68, 1); }
+  .pill-wrap:hover .pill.blue { box-shadow: 0 0 45px rgba(34, 102, 255, 1); }
+  .pill-label {
+    font-size: clamp(0.75rem, 1.3vw, 1.05rem);
+    letter-spacing: 0.15em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 8px rgba(0,255,65,0.6);
+    max-width: 260px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .pill-label b { display: block; font-size: 1.15em; margin-bottom: 0.3em; }
+  .pill-wrap.red-pill  .pill-label b { color: #ff8095; }
+  .pill-wrap.blue-pill .pill-label b { color: #7da3ff; }
+
+  /* ============ EASTER EGG PÍLULA AZUL ============ */
+  #blue-msg {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.92);
+    font-size: clamp(1.1rem, 2.4vw, 2rem);
+    letter-spacing: 0.15em;
+    text-align: center;
+    line-height: 2;
+    padding: 0 8vw;
+  }
+  #blue-msg.show { display: flex; }
+
+  /* ============ TELA DO SORTEIO ============ */
+  #screen-draw {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 3vw;
+    justify-content: center;
+  }
+  .panel {
+    flex-shrink: 0;
+    border: 1px solid var(--matrix-green-dim);
+    background: rgba(0, 12, 2, 0.82);
+    box-shadow: 0 0 30px rgba(0,255,65,0.12), inset 0 0 40px rgba(0,255,65,0.05);
+    padding: 3vh 2vw;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-title {
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    letter-spacing: 0.3em;
+    color: var(--matrix-green-dim);
+    border-bottom: 1px solid var(--matrix-green-dark);
+    padding-bottom: 1.2vh;
+    margin-bottom: 2vh;
+    text-transform: uppercase;
+  }
+
+  #order-panel { width: 30vw; min-width: 320px; align-self: center; max-height: 88vh; }
+  .slot {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8em;
+    padding: 1.4vh 0.4vw;
+    border-bottom: 1px dashed var(--matrix-green-dark);
+    font-size: clamp(0.8rem, 1.15vw, 1.05rem);
+    min-height: 3.2em;
+  }
+  .slot .num {
+    color: var(--matrix-green-dim);
+    font-size: 1.3em;
+    font-weight: bold;
+  }
+  .slot .content { flex: 1; }
+  .slot .area-name { font-weight: bold; letter-spacing: 0.08em; }
+  .slot .case-name { color: var(--matrix-green-dim); font-size: 0.88em; display: block; margin-top: 0.25em; }
+  .slot.empty .content { color: var(--matrix-green-dark); letter-spacing: 0.2em; }
+  .slot.filled { text-shadow: 0 0 8px rgba(0,255,65,0.5); }
+  .slot.current { border-left: 3px solid var(--matrix-green); padding-left: 0.8vw; background: rgba(0,255,65,0.06); }
+
+  #stage-panel {
+    width: 46vw;
+    min-width: 480px;
+    align-self: center;
+    min-height: 62vh;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+  }
+  #stage-round {
+    position: absolute;
+    top: 2.2vh;
+    left: 2vw;
+    right: 2vw;
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    letter-spacing: 0.3em;
+    color: var(--matrix-green-dim);
+    border-bottom: 1px solid var(--matrix-green-dark);
+    padding-bottom: 1.2vh;
+    text-transform: uppercase;
+    text-align: left;
+  }
+  #stage-label {
+    font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+    letter-spacing: 0.35em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    margin-bottom: 2.5vh;
+  }
+  #stage-display {
+    font-size: clamp(1.5rem, 3.2vw, 3rem);
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    min-height: 2.6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 14px rgba(0,255,65,0.7);
+    padding: 0 1vw;
+    line-height: 1.3;
+  }
+  #stage-display.locked { animation: lock-flash 0.5s; }
+  @keyframes lock-flash {
+    0% { color: #fff; text-shadow: 0 0 40px #fff; }
+    100% { color: var(--matrix-green); }
+  }
+
+  #case-list {
+    margin-top: 3vh;
+    width: 100%;
+    max-width: 34vw;
+    display: none;
+    flex-direction: column;
+    gap: 0.6vh;
+  }
+  #case-list.show { display: flex; }
+  .case-item {
+    padding: 1vh 1vw;
+    border: 1px solid var(--matrix-green-dark);
+    font-size: clamp(0.75rem, 1.1vw, 1rem);
+    color: var(--matrix-green-dim);
+    text-align: left;
+    transition: all 0.08s;
+  }
+  .case-item.hot {
+    color: #000;
+    background: var(--matrix-green);
+    box-shadow: 0 0 18px rgba(0,255,65,0.9);
+    font-weight: bold;
+  }
+  .case-item.winner {
+    color: var(--matrix-green);
+    border-color: var(--matrix-green);
+    box-shadow: 0 0 14px rgba(0,255,65,0.5);
+    font-weight: bold;
+  }
+  .case-item.dead { opacity: 0.25; text-decoration: line-through; }
+
+  /* ============ BOTÕES ============ */
+  .action-btn {
+    margin-top: 4vh;
+    background: transparent;
+    border: 1px solid var(--matrix-green);
+    color: var(--matrix-green);
+    font-family: inherit;
+    font-size: clamp(1rem, 1.6vw, 1.4rem);
+    letter-spacing: 0.25em;
+    padding: 1.6vh 3vw;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(0,255,65,0.6);
+    box-shadow: 0 0 18px rgba(0,255,65,0.25), inset 0 0 18px rgba(0,255,65,0.08);
+    transition: all 0.2s;
+  }
+  .action-btn:hover:not(:disabled) {
+    background: rgba(0,255,65,0.12);
+    box-shadow: 0 0 35px rgba(0,255,65,0.6), inset 0 0 25px rgba(0,255,65,0.15);
+  }
+  .action-btn:disabled { opacity: 0.25; cursor: default; }
+
+  .ghost-btn {
+    background: none;
+    border: none;
+    color: var(--matrix-green-dark);
+    font-family: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    padding: 0.5em 1em;
+  }
+  .ghost-btn:hover { color: var(--matrix-green-dim); }
+  #reset-corner { position: fixed; bottom: 1.5vh; right: 1.5vw; z-index: 40; display: none; }
+  #reset-corner.show { display: block; }
+
+  .hint {
+    margin-top: 1.8vh;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    color: var(--matrix-green-dark);
+  }
+
+  /* ============ ATAQUE DO TUBARÃO ============ */
+  #shark-attack {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.88);
+  }
+  #shark-attack.show { display: flex; }
+  #shark-attack pre {
+    font-size: clamp(7px, 1.4vw, 17px);
+    line-height: 1.05;
+    color: var(--matrix-green);
+    text-shadow: 0 0 10px var(--matrix-green), 0 0 30px rgba(0,255,65,0.6);
+    animation: attack-glitch 0.12s infinite;
+    white-space: pre;
+  }
+  @keyframes attack-glitch {
+    0%   { transform: translate(0,0) skewX(0); filter: none; }
+    25%  { transform: translate(-6px, 3px) skewX(2deg); filter: hue-rotate(80deg); }
+    50%  { transform: translate(5px, -4px) skewX(-3deg); filter: none; }
+    75%  { transform: translate(-3px, -2px) skewX(1deg); filter: brightness(1.6); }
+    100% { transform: translate(4px, 2px) skewX(-1deg); filter: none; }
+  }
+  #shark-attack .attack-label {
+    position: absolute;
+    bottom: 12vh;
+    width: 100%;
+    text-align: center;
+    font-size: clamp(1rem, 2vw, 1.6rem);
+    letter-spacing: 0.5em;
+    color: #fff;
+    text-shadow: 0 0 20px var(--matrix-green);
+    animation: blink 0.3s steps(1) infinite;
+  }
+
+  /* ============ TELA DO CASE VENCEDOR — TEMPLATE INFO CARD ============ */
+  #screen-winner {
+    flex-direction: column;
+    text-align: left;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 3.5vh 4vw 8vh;
+    gap: 1.6vh;
+    overflow-y: auto;
+  }
+  .winner-header {
+    width: 100%;
+    max-width: 1400px;
+  }
+  #winner-kicker {
+    font-family: inherit;
+    color: rgba(255,255,255,0.7);
+    font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.15em;
+    margin-bottom: 1.2vh;
+    text-transform: uppercase;
+  }
+  #winner-kicker .sep { color: var(--matrix-green-dim); margin: 0 0.6em; }
+  #winner-name {
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(1.8rem, 3.8vw, 3.4rem);
+    line-height: 1.12;
+    color: var(--matrix-green);
+    text-shadow: 0 0 18px var(--matrix-green), 0 0 70px rgba(0,255,65,0.45);
+    min-height: 1.2em;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.6vh;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  #winner-author {
+    color: rgba(255,255,255,0.85);
+    font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.05em;
+    min-height: 1.2em;
+  }
+  #winner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1.8vh 1.8vw;
+    width: 100%;
+    max-width: 1400px;
+    margin-top: 1vh;
+  }
+  .w-box {
+    background: rgba(0, 55, 15, 0.55);
+    border: 1px solid rgba(0, 255, 65, 0.18);
+    padding: 2.4vh 1.8vw;
+    box-shadow: 0 0 22px rgba(0, 255, 65, 0.08),
+                inset 0 0 40px rgba(0, 255, 65, 0.04);
+    color: rgba(255,255,255,0.92);
+    font-size: clamp(0.82rem, 1.15vw, 1rem);
+    line-height: 1.55;
+  }
+  .w-box.left-box { grid-column: 1; grid-row: 1 / 3; }
+  .w-box.right-top { grid-column: 2; grid-row: 1; }
+  .w-box.right-bot { grid-column: 2; grid-row: 2; }
+  .w-box-title {
+    color: var(--matrix-green);
+    font-weight: bold;
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    letter-spacing: 0.14em;
+    margin-bottom: 1.4vh;
+    text-shadow: 0 0 12px var(--matrix-green), 0 0 30px rgba(0,255,65,0.4);
+    text-transform: uppercase;
+  }
+  .w-box-sub-title {
+    color: var(--matrix-green);
+    font-weight: bold;
+    font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+    margin-top: 2.4vh;
+    margin-bottom: 0.5vh;
+    text-shadow: 0 0 8px var(--matrix-green);
+  }
+  .w-tools {
+    font-size: clamp(0.75rem, 1.05vw, 0.95rem);
+    color: rgba(255,255,255,0.75);
+    font-style: italic;
+    margin-top: 1.2vh;
+    line-height: 1.5;
+  }
+  .w-tools b { color: #fff; font-style: normal; font-weight: bold; }
+  .w-impacto-line { margin-bottom: 0.9vh; }
+  .w-impacto-line b { color: #fff; }
+  #winner-footer {
+    width: 100%;
+    max-width: 1400px;
+    text-align: center;
+    margin-top: 1.4vh;
+  }
+  #w-timetovalue {
+    color: var(--matrix-green);
+    font-weight: bold;
+    font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 12px var(--matrix-green);
+    min-height: 1.2em;
+  }
+  @media (max-width: 980px) {
+    #winner-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+    }
+    .w-box.left-box { grid-column: 1; grid-row: 1; }
+    .w-box.right-top { grid-column: 1; grid-row: 2; }
+    .w-box.right-bot { grid-column: 1; grid-row: 3; }
+  }
+
+  /* ============ BOTÃO "VER MAIS" + MODAL ============ */
+  .winner-kicker-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5vw;
+    margin-bottom: 1.2vh;
+    flex-wrap: wrap;
+  }
+  .winner-kicker-row #winner-kicker { margin-bottom: 0; }
+  #winner-more {
+    background: transparent;
+    border: 1px solid var(--matrix-green);
+    color: var(--matrix-green);
+    font-family: inherit;
+    font-size: clamp(0.72rem, 0.95vw, 0.9rem);
+    letter-spacing: 0.2em;
+    padding: 0.6vh 1.2vw;
+    cursor: pointer;
+    text-transform: lowercase;
+    text-shadow: 0 0 8px var(--matrix-green);
+    box-shadow: 0 0 14px rgba(0,255,65,0.25), inset 0 0 12px rgba(0,255,65,0.08);
+    transition: all 0.2s;
+  }
+  #winner-more:hover {
+    background: rgba(0,255,65,0.14);
+    box-shadow: 0 0 26px rgba(0,255,65,0.55), inset 0 0 20px rgba(0,255,65,0.15);
+  }
+
+  #extras-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 8, 2, 0.92);
+    backdrop-filter: blur(4px);
+    padding: 3vh 4vw;
+    overflow-y: auto;
+  }
+  #extras-modal.show {
+    display: flex;
+    animation: extras-in 0.3s ease-out;
+  }
+  @keyframes extras-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  #extras-content {
+    width: 100%;
+    max-width: 1500px;
+    position: relative;
+  }
+  .extras-header { margin-bottom: 3vh; }
+  #extras-kicker {
+    color: rgba(255,255,255,0.7);
+    font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.8vh;
+  }
+  #extras-title {
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(1.6rem, 3.4vw, 3rem);
+    color: var(--matrix-green);
+    text-shadow: 0 0 18px var(--matrix-green), 0 0 60px rgba(0,255,65,0.4);
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.5vh;
+    word-break: break-word;
+  }
+  #extras-author {
+    color: rgba(255,255,255,0.85);
+    font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+    letter-spacing: 0.05em;
+  }
+  #extras-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2vh 2vw;
+  }
+  .extra-showcase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2vh;
+  }
+  .extra-showcase .label {
+    color: var(--matrix-green);
+    font-weight: bold;
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 12px var(--matrix-green), 0 0 30px rgba(0,255,65,0.4);
+    text-transform: none;
+  }
+  /* frame estilo "polaroid Matrix" — cantos verdes triangulares nas quinas opostas */
+  .extra-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 10;
+    background: rgba(0,20,5,0.85);
+    box-shadow: 0 0 30px rgba(0,255,65,0.25),
+                inset 0 0 40px rgba(0,255,65,0.06);
+    overflow: hidden;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .extra-frame::before,
+  .extra-frame::after {
+    content: "";
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: var(--matrix-green);
+    box-shadow: 0 0 22px var(--matrix-green);
+  }
+  .extra-frame::before {
+    top: -10px; left: -10px;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  .extra-frame::after {
+    bottom: -10px; right: -10px;
+    clip-path: polygon(100% 100%, 100% 0, 0 100%);
+  }
+  .extra-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 1;
+  }
+  /* placeholder quando não há imagem */
+  .extra-placeholder {
+    color: rgba(0,255,65,0.7);
+    font-family: inherit;
+    font-size: clamp(0.75rem, 1.1vw, 0.95rem);
+    letter-spacing: 0.15em;
+    text-align: center;
+    line-height: 1.7;
+    text-shadow: 0 0 8px rgba(0,255,65,0.5);
+    padding: 8%;
+  }
+  .extra-placeholder .icon {
+    display: block;
+    font-size: 2.5em;
+    margin-bottom: 0.6em;
+    opacity: 0.6;
+  }
+  #extras-close {
+    position: absolute;
+    top: -1vh;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: var(--matrix-green-dark);
+    font-family: inherit;
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    padding: 0.5em 1em;
+  }
+  #extras-close:hover { color: var(--matrix-green); }
+  @media (max-width: 980px) {
+    #extras-grid { grid-template-columns: 1fr; }
+    #extras-close { position: static; margin-top: 2vh; }
+  }
+  #winner-next {
+    position: absolute;
+    bottom: 3.5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    border: 1px solid var(--matrix-green-dark);
+    color: var(--matrix-green-dim);
+    font-family: inherit;
+    font-size: clamp(0.75rem, 1vw, 0.95rem);
+    letter-spacing: 0.25em;
+    padding: 1vh 2.2vw;
+    cursor: pointer;
+    text-transform: lowercase;
+    transition: all 0.2s;
+  }
+  #winner-next:hover {
+    color: var(--matrix-green);
+    border-color: var(--matrix-green);
+    box-shadow: 0 0 18px rgba(0,255,65,0.35);
+  }
+  #winner-name .fx-fall {
+    display: inline-block;
+    animation: charfall 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  @keyframes charfall {
+    from { transform: translateY(-55vh); opacity: 0; }
+    60%  { opacity: 1; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  #winner-name .fx-slam {
+    display: inline-block;
+    animation: wordslam 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  @keyframes wordslam {
+    from { transform: scale(3); opacity: 0; filter: blur(10px); }
+    to   { transform: scale(1); opacity: 1; filter: blur(0); }
+  }
+
+  /* ============ TELA FINAL ============ */
+  #final-board {
+    width: min(72vw, 950px);
+    border: 1px solid var(--matrix-green-dim);
+    background: rgba(0, 12, 2, 0.88);
+    box-shadow: 0 0 40px rgba(0,255,65,0.15);
+    padding: 4vh 3vw;
+    margin-top: 3vh;
+  }
+  #final-board .line {
+    font-size: clamp(0.9rem, 1.5vw, 1.35rem);
+    padding: 1.2vh 0;
+    border-bottom: 1px dashed var(--matrix-green-dark);
+    letter-spacing: 0.06em;
+    white-space: pre-wrap;
+    text-shadow: 0 0 8px rgba(0,255,65,0.4);
+    min-height: 1.6em;
+  }
+  #final-board .line:last-child { border-bottom: none; }
+  .final-title {
+    font-size: clamp(1.4rem, 3vw, 2.6rem);
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 15px var(--matrix-green);
+  }
+
+  /* ============ TELAS ESTREITAS (preview / notebook) ============ */
+  .screen { overflow-y: auto; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 980px) {
+    .screen { justify-content: safe center; }
+    #screen-draw {
+      flex-direction: column;
+      align-items: center;
+      justify-content: safe center;
+      gap: 2vh;
+      padding-top: 4vh;
+    }
+    #order-panel, #stage-panel {
+      width: 92vw;
+      min-width: 0;
+      max-height: none;
+      align-self: center;
+    }
+    #stage-panel { min-height: 0; padding-top: 8vh; padding-bottom: 4vh; }
+    #case-list { max-width: 100%; }
+    #final-board { width: 92vw; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="rain"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- barbatana que cruza a tela -->
+<svg id="fin" viewBox="0 0 180 90" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 10 88 Q 45 70 62 40 Q 74 16 96 4 Q 92 30 98 50 Q 104 72 122 88 Z"
+        fill="rgba(0,40,8,0.9)" stroke="#00ff41" stroke-width="2"/>
+  <path d="M 0 88 L 180 88" stroke="#00ff41" stroke-width="1.5" opacity="0.5"/>
+</svg>
+
+<!-- ===================== TELA 1: ENTRADA ===================== -->
+<div class="screen active" id="screen-intro">
+  <h1 class="glitch" data-text="SHARK TANK IA">SHARK TANK IA</h1>
+  <div class="tagline">Bem-vindo ao tanque. Siga o coelho branco.<span class="cursor">&nbsp;</span></div>
+  <pre id="shark-intro"></pre>
+  <div class="pills">
+    <button class="pill-wrap blue-pill" id="pill-blue">
+      <div class="pill blue"></div>
+      <div class="pill-label"><b>PÍLULA AZUL</b>a história acaba aqui e ninguém apresenta</div>
+    </button>
+    <button class="pill-wrap red-pill" id="pill-red">
+      <div class="pill red"></div>
+      <div class="pill-label"><b>PÍLULA VERMELHA</b>descubra quem entra no tanque primeiro</div>
+    </button>
+  </div>
+</div>
+
+<div id="blue-msg">
+  ERRO 404: COVARDIA DETECTADA_<br/>
+  A Matrix não aceita a pílula azul hoje.<br/>
+  O sorteio é inevitável, Sr. Anderson.
+</div>
+
+<!-- ===================== TELA 2: SORTEIO ===================== -->
+<div class="screen" id="screen-draw">
+  <div class="panel" id="order-panel">
+    <div class="panel-title">// ordem de apresentação</div>
+    <div id="slots"></div>
+  </div>
+  <div class="panel" id="stage-panel">
+    <div id="stage-round"></div>
+    <div id="stage-label"></div>
+    <div id="stage-display"></div>
+    <div id="case-list"></div>
+    <button class="action-btn" id="draw-btn"></button>
+    <div class="hint">[ ENTER ] ou [ ESPAÇO ] para sortear</div>
+  </div>
+</div>
+
+<!-- ===================== TELA DO CASE VENCEDOR ===================== -->
+<div class="screen" id="screen-winner">
+  <div class="winner-header">
+    <div class="winner-kicker-row">
+      <div id="winner-kicker"></div>
+      <button id="winner-more" type="button" style="display:none">▸ ver mais_</button>
+    </div>
+    <h1 id="winner-name"></h1>
+    <div id="winner-author"></div>
+  </div>
+
+  <div id="winner-grid">
+    <div class="w-box left-box">
+      <div class="w-box-title">DESAFIO</div>
+      <div id="w-desafio"></div>
+      <div class="w-box-sub-title">Stakeholder</div>
+      <div id="w-stakeholder"></div>
+    </div>
+
+    <div class="w-box right-top">
+      <div class="w-box-title">SOLUÇÃO &amp; TOOL</div>
+      <div id="w-solucao"></div>
+      <div class="w-tools" id="w-tools"></div>
+    </div>
+
+    <div class="w-box right-bot">
+      <div class="w-box-title">IMPACTO | Value Realization</div>
+      <div id="w-impacto"></div>
+    </div>
+  </div>
+
+  <div id="winner-footer">
+    <div id="w-timetovalue"></div>
+  </div>
+
+  <button id="winner-next"></button>
+</div>
+
+<!-- ===================== MODAL "VER MAIS" (showcases do case) ===================== -->
+<div id="extras-modal">
+  <div id="extras-content">
+    <div class="extras-header">
+      <div id="extras-kicker"></div>
+      <h2 id="extras-title"></h2>
+      <div id="extras-author"></div>
+    </div>
+    <div id="extras-grid"></div>
+    <button id="extras-close" type="button">&gt; fechar_</button>
+  </div>
+</div>
+
+<!-- ===================== ATAQUE ===================== -->
+<div id="shark-attack">
+  <pre id="shark-attack-art"></pre>
+  <div class="attack-label">O TUBARÃO ESCOLHEU</div>
+</div>
+
+<!-- ===================== TELA 3: FINAL ===================== -->
+<div class="screen" id="screen-final">
+  <h1 class="glitch final-title" data-text="ORDEM DEFINIDA">ORDEM DEFINIDA</h1>
+  <div class="tagline">A Matrix decidiu. Não há como escapar do tanque.</div>
+  <div id="final-board"></div>
+  <button class="ghost-btn" id="reset-btn" style="margin-top:3vh">&gt; reiniciar simulação_</button>
+</div>
+
+<button class="ghost-btn" id="reset-corner">&gt; reset_</button>
+
+<script>
+/* =====================================================================
+   LISTA DE ÁREAS E CASES  —  EDITE AQUI!
+   Cada case é um objeto com:
+     nome        → título grande (obrigatório)
+     autor       → apresentador (aparece no cabeçalho)
+     duracao     → ex: "5 minutos"
+     desafio     → texto do card DESAFIO
+     stakeholder → nome dentro do card DESAFIO
+     solucao     → texto do card SOLUÇÃO & TOOL
+     tools       → lista (string ou array) de ferramentas
+     impacto     → array de { label, value } (aparece no card IMPACTO)
+     timeToValue → ex: "6 meses" (aparece no footer)
+   Campos vazios simplesmente somem — só preencha o que tiver.
+   O sorteio escolhe UM case por área.
+   ===================================================================== */
+const AREAS = [
+  {
+    nome: "STRATEGY",
+    cases: [
+      {
+        nome: "AURA (AI Unified Reporting Agent)",
+        autor: "Luciano Barbosa",
+        duracao: "5 minutos",
+        desafio:
+          "Com a reestruturação da companhia no ano passado, a governança mudou e hoje a gestão é feita por portfólio. Nosso time atua nesse pilar trazendo agilidade, transparência, priorização e apoio à tomada de decisão das lideranças. Porém, a baixa confiabilidade e a falta de dados completos dos dados dos projetos limita a qualidade das análises e compromete a tomada de decisão estratégica das lideranças.",
+        stakeholder: "Claudia Meira / CDIO BPC Latam",
+        solucao:
+          "AURA é um agente de IA que consolida e analisa dados, qualifica a governança, responde dúvidas estratégicas e entrega relatórios executivos diretamente às lideranças, trazendo agilidade e transparência nas decisões e tudo com base nos dados dos projetos.",
+        tools: [
+          { name: "Microsoft Copilot Studio", highlight: true },
+          "Azure DevOps",
+          "Power BI",
+          "Teams",
+          "Power Automate",
+        ],
+        impacto: [
+          { label: "Produtividade", value: "+20 a 24h/mês" },
+          { label: "Escalabilidade", value: "Tax Reform" },
+        ],
+        timeToValue: "6 meses",
+        // showcases — aparecem no modal "> ver mais_"
+        // Se tiver screenshots reais, coloque em sorteio-matrix/assets/ e
+        // referencie via img: "assets/aura-copilot.png"
+        extras: [
+          { label: "Copilot Studio", img: "assets/aura-copilot.png" },
+          { label: "Teams",          img: "assets/aura-teams.png" },
+          { label: "CDIO Report",    img: "assets/aura-cdio-report.png" },
+        ],
+      },
+    ],
+  },
+  {
+    nome: "COMERCIAL",
+    cases: [
+      { nome: "Agente IA de qualificação de leads" },
+      { nome: "Copiloto de propostas comerciais" },
+      { nome: "Preditor de churn de clientes" },
+    ],
+  },
+  {
+    nome: "MARKETING",
+    cases: [
+      { nome: "Gerador de campanhas com IA" },
+      { nome: "Análise de sentimento de marca" },
+      { nome: "Personalização de conteúdo em escala" },
+    ],
+  },
+  {
+    nome: "OPERAÇÕES",
+    cases: [
+      { nome: "Otimização de rotas com IA" },
+      { nome: "Previsão de demanda inteligente" },
+      { nome: "Automação de tickets com LLM" },
+    ],
+  },
+  {
+    nome: "FINANCEIRO",
+    cases: [
+      { nome: "Detecção de anomalias em despesas" },
+      { nome: "Copiloto de fechamento contábil" },
+    ],
+  },
+  {
+    nome: "TECNOLOGIA",
+    cases: [
+      { nome: "Assistente de code review com IA" },
+      { nome: "RAG sobre a documentação interna" },
+    ],
+  },
+];
+/* ===================================================================== */
+
+const GLYPHS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789Z$#%&+*=<>";
+// aleatoriedade criptográfica (crypto.getRandomValues) — imprevisível de verdade
+function rand(n) {
+  if (window.crypto && crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+const glyph = () => GLYPHS[rand(GLYPHS.length)];
+
+/* ---------------- CHUVA DE CÓDIGO ---------------- */
+const canvas = document.getElementById("rain");
+const ctx = canvas.getContext("2d");
+let drops = [];
+const FONT_SIZE = 18;
+
+function resizeRain() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  const cols = Math.ceil(canvas.width / FONT_SIZE);
+  drops = Array.from({ length: cols }, () => rand(canvas.height / FONT_SIZE));
+}
+resizeRain();
+addEventListener("resize", resizeRain);
+
+setInterval(() => {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = FONT_SIZE + "px monospace";
+  for (let i = 0; i < drops.length; i++) {
+    const x = i * FONT_SIZE;
+    const y = drops[i] * FONT_SIZE;
+    // cabeça da coluna mais clara
+    ctx.fillStyle = Math.random() < 0.08 ? "#c8ffdd" : "#00ff41";
+    ctx.globalAlpha = 0.55;
+    ctx.fillText(glyph(), x, y);
+    ctx.globalAlpha = 1;
+    if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    else drops[i]++;
+  }
+}, 45);
+
+/* ---------------- TUBARÃO FEITO DE CÓDIGO ----------------
+   O tubarão é uma silhueta (#) preenchida com glifos aleatórios
+   que trocam sozinhos — como se ele fosse feito da própria Matrix. */
+const SHARK_SHAPE = [
+"                                  ##",
+"                                 #####",
+"    ##                          #######",
+"    ####                       #########",
+"    ######                    ###########",
+"     ########           ###########################",
+"      ####################################################",
+"     ############################################ O ############",
+"    ############################################################",
+"     #####################################################",
+"      ###########################################    ######",
+"    ####      ##############################    ########",
+"    ###         #########      ##########         #####",
+"     #           #######         ######             ##",
+"                   ####            ###",
+"                    ##",
+];
+
+function sharkFrame() {
+  return SHARK_SHAPE.map((row) =>
+    row.replace(/[#O]/g, (c) => (c === "O" ? "◉" : glyph()))
+  ).join("\n");
+}
+
+const sharkIntroEl = document.getElementById("shark-intro");
+const sharkAttackEl = document.getElementById("shark-attack-art");
+setInterval(() => {
+  if (sharkIntroEl.offsetParent !== null) sharkIntroEl.textContent = sharkFrame();
+  if (attackEl.classList.contains("show")) sharkAttackEl.textContent = sharkFrame();
+}, 110);
+sharkIntroEl.textContent = sharkFrame();
+
+/* ---------------- BARBATANA ---------------- */
+const finEl = document.getElementById("fin");
+function swimFin() {
+  finEl.classList.remove("swim");
+  void finEl.offsetWidth; // reinicia a animação
+  finEl.classList.add("swim");
+}
+setInterval(swimFin, 26000);
+setTimeout(swimFin, 5000);
+
+/* ---------------- MOTOR DE ÁUDIO (WebAudio, sem arquivos, tudo sintetizado) ---------------- */
+let audioCtx = null;
+let noiseBuf = null;
+function ac() {
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+/* fonte de ruído branco (base para tiques, rugidos e estática) */
+function noiseSrc() {
+  const ctx = ac();
+  if (!noiseBuf) {
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf;
+  src.loop = true;
+  return src;
+}
+function env(gainNode, t0, vol, attack, decay) {
+  gainNode.gain.setValueAtTime(0.0001, t0);
+  gainNode.gain.exponentialRampToValueAtTime(vol, t0 + attack);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
+}
+
+function beep(freq = 880, dur = 0.09, vol = 0.05) {
+  try {
+    const ctx = ac();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = freq;
+    gain.gain.value = vol;
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  } catch (e) { /* sem áudio, sem problema */ }
+}
+
+/* tique seco de roleta (estalo de ruído filtrado) */
+function sfxTick() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const src = noiseSrc();
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 2600 + rand(800); bp.Q.value = 6;
+    const g = ctx.createGain();
+    env(g, t, 0.13, 0.002, 0.05);
+    src.connect(bp).connect(g).connect(ctx.destination);
+    src.start(t); src.stop(t + 0.08);
+  } catch (e) {}
+}
+
+/* batida de coração grave (dupla) — paradas de suspense */
+function sfxHeartbeat() {
+  try {
+    const ctx = ac();
+    [0, 0.28].forEach((off) => {
+      const t = ctx.currentTime + off;
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.18);
+      const g = ctx.createGain();
+      env(g, t, 0.24, 0.005, 0.22);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.32);
+    });
+  } catch (e) {}
+}
+
+/* tensão subindo durante a roleta; retorna função para cortar o som */
+function sfxRiser(durSec) {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(50, t);
+    osc.frequency.exponentialRampToValueAtTime(220, t + durSec);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(200, t);
+    lp.frequency.exponentialRampToValueAtTime(1200, t + durSec);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + Math.min(1.5, durSec));
+    const nsrc = noiseSrc();
+    const nbp = ctx.createBiquadFilter();
+    nbp.type = "bandpass";
+    nbp.frequency.setValueAtTime(400, t);
+    nbp.frequency.exponentialRampToValueAtTime(3000, t + durSec);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.0001, t);
+    ng.gain.exponentialRampToValueAtTime(0.04, t + durSec);
+    osc.connect(lp).connect(g).connect(ctx.destination);
+    nsrc.connect(nbp).connect(ng).connect(ctx.destination);
+    osc.start(t); nsrc.start(t);
+    osc.stop(t + durSec + 3); nsrc.stop(t + durSec + 3);
+    let stopped = false;
+    return () => {
+      if (stopped) return;
+      stopped = true;
+      const now = ctx.currentTime;
+      [g, ng].forEach((gn) => {
+        gn.gain.cancelScheduledValues(now);
+        gn.gain.setValueAtTime(Math.max(gn.gain.value, 0.0001), now);
+        gn.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+      });
+      try { osc.stop(now + 0.2); nsrc.stop(now + 0.2); } catch (e) {}
+    };
+  } catch (e) { return () => {}; }
+}
+
+/* ATAQUE DO TUBARÃO: tema grave "duunn dun" acelerando + rugido de ruído */
+function sfxSharkAttack() {
+  try {
+    const ctx = ac(), t0 = ctx.currentTime;
+    const notes = [[41.2, 0], [43.65, 0.32], [41.2, 0.58], [43.65, 0.78], [41.2, 0.94], [43.65, 1.06]];
+    notes.forEach(([f, off]) => {
+      const t = t0 + off;
+      const osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = f;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 220;
+      const g = ctx.createGain();
+      env(g, t, 0.32, 0.01, 0.22);
+      osc.connect(lp).connect(g).connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.3);
+    });
+    const nsrc = noiseSrc();
+    const lp2 = ctx.createBiquadFilter();
+    lp2.type = "lowpass";
+    lp2.frequency.setValueAtTime(150, t0);
+    lp2.frequency.exponentialRampToValueAtTime(1800, t0 + 1.2);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.0001, t0);
+    ng.gain.exponentialRampToValueAtTime(0.3, t0 + 1.15);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
+    nsrc.connect(lp2).connect(ng).connect(ctx.destination);
+    nsrc.start(t0); nsrc.stop(t0 + 1.7);
+  } catch (e) {}
+}
+
+/* impacto de revelação: bumbo grave + ping brilhante + splash de ruído */
+function sfxLock() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const kick = ctx.createOscillator();
+    kick.type = "sine";
+    kick.frequency.setValueAtTime(160, t);
+    kick.frequency.exponentialRampToValueAtTime(35, t + 0.28);
+    const kg = ctx.createGain();
+    env(kg, t, 0.34, 0.005, 0.3);
+    kick.connect(kg).connect(ctx.destination);
+    kick.start(t); kick.stop(t + 0.35);
+    const ping = ctx.createOscillator();
+    ping.type = "sine"; ping.frequency.value = 1320;
+    const pg = ctx.createGain();
+    env(pg, t + 0.03, 0.09, 0.005, 0.5);
+    ping.connect(pg).connect(ctx.destination);
+    ping.start(t + 0.03); ping.stop(t + 0.6);
+    const nsrc = noiseSrc();
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass"; hp.frequency.value = 3500;
+    const ng = ctx.createGain();
+    env(ng, t, 0.08, 0.003, 0.25);
+    nsrc.connect(hp).connect(ng).connect(ctx.destination);
+    nsrc.start(t); nsrc.stop(t + 0.3);
+  } catch (e) {}
+}
+
+/* arpejo de vitória (tela do case vencedor) */
+function sfxVictory() {
+  try {
+    const ctx = ac(), t0 = ctx.currentTime;
+    [220, 261.6, 329.6, 440, 659.3].forEach((f, i) => {
+      const t = t0 + i * 0.09;
+      const osc = ctx.createOscillator();
+      osc.type = "triangle"; osc.frequency.value = f;
+      const g = ctx.createGain();
+      env(g, t, 0.09, 0.01, 0.55);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t); osc.stop(t + 0.6);
+    });
+  } catch (e) {}
+}
+
+/* tecla digitada (estalo curto e agudo) */
+function sfxKey() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const src = noiseSrc();
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 5000 + rand(2000); bp.Q.value = 3;
+    const g = ctx.createGain();
+    env(g, t, 0.07, 0.001, 0.035);
+    src.connect(bp).connect(g).connect(ctx.destination);
+    src.start(t); src.stop(t + 0.05);
+  } catch (e) {}
+}
+
+/* impacto de palavra (revelação de impacto) */
+function sfxSlam() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(45, t + 0.2);
+    const g = ctx.createGain();
+    env(g, t, 0.3, 0.004, 0.25);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.3);
+    const nsrc = noiseSrc();
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 900;
+    const ng = ctx.createGain();
+    env(ng, t, 0.11, 0.003, 0.12);
+    nsrc.connect(lp).connect(ng).connect(ctx.destination);
+    nsrc.start(t); nsrc.stop(t + 0.15);
+  } catch (e) {}
+}
+
+/* pílula vermelha: varredura subindo | azul: "acesso negado" */
+function sfxRedPill() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(980, t + 0.4);
+    const g = ctx.createGain();
+    env(g, t, 0.07, 0.01, 0.45);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.5);
+  } catch (e) {}
+}
+function sfxDenied() {
+  try {
+    const ctx = ac(), t = ctx.currentTime;
+    [0, 0.18].forEach((off) => {
+      const osc = ctx.createOscillator();
+      osc.type = "square"; osc.frequency.value = 110;
+      const g = ctx.createGain();
+      env(g, t + off, 0.09, 0.005, 0.13);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t + off); osc.stop(t + off + 0.18);
+    });
+  } catch (e) {}
+}
+
+/* ---------------- SCRAMBLE (revelação estilo Matrix) ---------------- */
+/* usa setInterval (e não requestAnimationFrame) para a animação
+   continuar e terminar mesmo se a aba/janela ficar oculta no meio */
+function scrambleReveal(el, finalText, duration, onDone) {
+  // os caracteres travam em ORDEM ALEATÓRIA e o último fica
+  // piscando sozinho no final, segurando o suspense
+  const order = [];
+  for (let i = 0; i < finalText.length; i++) if (finalText[i] !== " ") order.push(i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = rand(i + 1);
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  const lockAt = {};
+  order.forEach((ci, rank) => {
+    lockAt[ci] = order.length === 1 ? 0.5 : 0.12 + 0.68 * (rank / (order.length - 1));
+  });
+  lockAt[order[order.length - 1]] = 0.96;
+  const start = performance.now();
+  let lastTick = 0;
+  const iv = setInterval(() => {
+    const now = performance.now();
+    const t = Math.min((now - start) / duration, 1);
+    let out = "";
+    for (let i = 0; i < finalText.length; i++) {
+      if (finalText[i] === " ") { out += " "; continue; }
+      out += t >= lockAt[i] ? finalText[i] : glyph();
+    }
+    el.textContent = out;
+    if (now - lastTick > 70 && t < 1) { beep(220 + t * 700, 0.03, 0.02); lastTick = now; }
+    if (t >= 1) {
+      clearInterval(iv);
+      el.textContent = finalText;
+      el.classList.remove("locked");
+      void el.offsetWidth;
+      el.classList.add("locked");
+      sfxLock();
+      onDone && onDone();
+    }
+  }, 33);
+}
+
+/* ---------------- REVELAÇÕES DO CASE (uma diferente por rodada) ----------------
+   Rodada 1: decodificação Matrix   Rodada 4: strobe glitch
+   Rodada 2: máquina de escrever    Rodada 5: palavras em impacto
+   Rodada 3: chuva de caracteres    Rodada 6: binário decodificando */
+
+function fxScramble(el, text, onDone) {
+  scrambleReveal(el, text, 3200, onDone);
+}
+
+function fxTypewriter(el, text, onDone) {
+  let i = 0;
+  const iv = setInterval(() => {
+    i++;
+    el.textContent = text.slice(0, i) + (i < text.length ? "█" : "");
+    sfxKey();
+    if (i >= text.length) { clearInterval(iv); sfxLock(); onDone(); }
+  }, 80);
+}
+
+function fxRainfall(el, text, onDone) {
+  el.textContent = "";
+  [...text].forEach((ch, i) => {
+    const s = document.createElement("span");
+    s.className = "fx-fall";
+    s.style.animationDelay = i * 55 + "ms";
+    s.textContent = ch === " " ? " " : ch;
+    el.appendChild(s);
+  });
+  let n = 0;
+  const iv = setInterval(() => { sfxTick(); if (++n > text.length / 3) clearInterval(iv); }, 160);
+  setTimeout(() => { sfxLock(); onDone(); }, text.length * 55 + 900);
+}
+
+function fxStrobe(el, text, onDone) {
+  const start = performance.now();
+  const dur = 2800;
+  const iv = setInterval(() => {
+    const t = (performance.now() - start) / dur;
+    if (t >= 1) {
+      clearInterval(iv);
+      el.style.opacity = "1";
+      el.textContent = text;
+      sfxLock();
+      onDone();
+      return;
+    }
+    el.style.opacity = Math.random() < t ? "1" : (Math.random() < 0.5 ? "0.15" : "0.8");
+    el.textContent = [...text].map((c) => (c === " " ? " " : Math.random() < t ? c : glyph())).join("");
+    if (Math.random() < 0.3) beep(200 + rand(900), 0.02, 0.02);
+  }, 70);
+}
+
+function fxWordSlam(el, text, onDone) {
+  el.textContent = "";
+  const words = text.split(" ");
+  let w = 0;
+  (function next() {
+    if (w >= words.length) { sfxLock(); onDone(); return; }
+    const s = document.createElement("span");
+    s.className = "fx-slam";
+    s.textContent = words[w] + (w < words.length - 1 ? " " : "");
+    el.appendChild(s);
+    sfxSlam();
+    w++;
+    setTimeout(next, 700);
+  })();
+}
+
+function fxBinary(el, text, onDone) {
+  const chars = [...text];
+  const mid = (chars.length - 1) / 2;
+  // decodifica do centro para as bordas
+  const lockAt = chars.map((c, i) => 0.3 + 0.62 * (Math.abs(i - mid) / (mid || 1)));
+  const start = performance.now();
+  const dur = 3200;
+  const iv = setInterval(() => {
+    const t = (performance.now() - start) / dur;
+    if (t >= 1) { clearInterval(iv); el.textContent = text; sfxLock(); onDone(); return; }
+    el.textContent = chars.map((c, i) => (c === " " ? " " : t >= lockAt[i] ? c : String(rand(2)))).join("");
+    if (Math.random() < 0.4) beep(300 + t * 600, 0.02, 0.015);
+  }, 60);
+}
+
+const REVEAL_FX = [fxScramble, fxTypewriter, fxRainfall, fxStrobe, fxWordSlam, fxBinary];
+
+/* ---------------- ESTADO ---------------- */
+const STORAGE_KEY = "sharktank-matrix-v1";
+let state = { results: [], pendingArea: null }; // results: [{area, caso}]
+
+/* persistência é opcional: se o navegador bloquear o storage, o sorteio segue normalmente */
+function saveState() {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function loadState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (raw) state = JSON.parse(raw);
+    if (!state || !Array.isArray(state.results)) state = { results: [], pendingArea: null };
+  } catch (e) { state = { results: [], pendingArea: null }; }
+}
+function clearState() {
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+const remainingAreas = () =>
+  AREAS.filter((a) => !state.results.some((r) => r.area === a.nome));
+
+/* ---------------- ELEMENTOS ---------------- */
+const screens = {
+  intro: document.getElementById("screen-intro"),
+  draw: document.getElementById("screen-draw"),
+  winner: document.getElementById("screen-winner"),
+  final: document.getElementById("screen-final"),
+};
+const winnerKicker = document.getElementById("winner-kicker");
+const winnerName = document.getElementById("winner-name");
+const winnerAuthor = document.getElementById("winner-author");
+const winnerNext = document.getElementById("winner-next");
+const wDesafio = document.getElementById("w-desafio");
+const wStakeholder = document.getElementById("w-stakeholder");
+const wSolucao = document.getElementById("w-solucao");
+const wTools = document.getElementById("w-tools");
+const wImpacto = document.getElementById("w-impacto");
+const wTimeToValue = document.getElementById("w-timetovalue");
+const winnerDetailEls = [wDesafio, wStakeholder, wSolucao, wTools, wImpacto, wTimeToValue, winnerAuthor];
+const winnerMoreBtn = document.getElementById("winner-more");
+const extrasModal = document.getElementById("extras-modal");
+const extrasKicker = document.getElementById("extras-kicker");
+const extrasTitle = document.getElementById("extras-title");
+const extrasAuthor = document.getElementById("extras-author");
+const extrasGrid = document.getElementById("extras-grid");
+const extrasClose = document.getElementById("extras-close");
+let currentExtrasContext = null;
+const slotsEl = document.getElementById("slots");
+const stageRound = document.getElementById("stage-round");
+const stageLabel = document.getElementById("stage-label");
+const stageDisplay = document.getElementById("stage-display");
+const caseListEl = document.getElementById("case-list");
+const drawBtn = document.getElementById("draw-btn");
+const attackEl = document.getElementById("shark-attack");
+const finalBoard = document.getElementById("final-board");
+const resetCorner = document.getElementById("reset-corner");
+
+function showScreen(name) {
+  Object.values(screens).forEach((s) => s.classList.remove("active"));
+  screens[name].classList.add("active");
+  resetCorner.classList.toggle("show", name !== "intro");
+}
+
+/* ---------------- PAINEL DE SLOTS ---------------- */
+function renderSlots() {
+  slotsEl.innerHTML = "";
+  for (let i = 0; i < AREAS.length; i++) {
+    const div = document.createElement("div");
+    const r = state.results[i];
+    const isCurrent = i === state.results.length && state.results.length < AREAS.length;
+    div.className = "slot " + (r ? "filled" : "empty") + (isCurrent ? " current" : "");
+    const num = String(i + 1).padStart(2, "0");
+    if (r) {
+      div.innerHTML =
+        '<span class="num">' + num + '</span><span class="content"><span class="area-name">' +
+        r.area + '</span><span class="case-name">' + r.caso.nome + "</span></span>";
+    } else if (state.pendingArea && isCurrent) {
+      div.innerHTML =
+        '<span class="num">' + num + '</span><span class="content"><span class="area-name">' +
+        state.pendingArea + '</span><span class="case-name">sorteando o case...</span></span>';
+      div.classList.remove("empty");
+      div.classList.add("filled");
+    } else {
+      div.innerHTML = '<span class="num">' + num + '</span><span class="content">[ aguardando sorteio ]</span>';
+    }
+    slotsEl.appendChild(div);
+  }
+}
+
+/* ---------------- SUSPENSE ---------------- */
+const AREA_MSGS = [
+  "embaralhando os destinos...",
+  "hackeando o mainframe do tanque...",
+  "o Oráculo está escolhendo...",
+  "não há coincidências, Sr. Anderson...",
+];
+const CASE_MSGS = [
+  "o tubarão sentiu cheiro de sangue...",
+  "rondando os cases da área...",
+  "afiando os dentes...",
+  "ninguém escapa do tanque...",
+];
+
+function rotateLabel(msgs) {
+  let i = 0;
+  stageLabel.textContent = msgs[0];
+  const iv = setInterval(() => {
+    i = (i + 1) % msgs.length;
+    stageLabel.textContent = msgs[i];
+  }, 1500);
+  return () => clearInterval(iv);
+}
+
+/* Sequência de "roleta": gira rápido, desacelera e — se houver um
+   vencedor a cravar — faz uma PARADA FALSA num item errado antes
+   de pular para o escolhido. */
+function buildSpinSteps(len, winnerIdx) {
+  const steps = [];
+  let idx = rand(len);
+  let delay = 60;
+  while (delay < 400) {
+    steps.push({ i: idx % len, d: delay });
+    idx++;
+    delay *= 1.12;
+  }
+  if (winnerIdx == null) return steps; // teaser puro, para sem cravar
+  if (idx % len === winnerIdx) { steps.push({ i: idx % len, d: delay }); idx++; }
+  steps.push({ i: idx % len, d: 1050 }); // parada falsa: segura no errado...
+  idx++;
+  while (idx % len !== winnerIdx) { steps.push({ i: idx % len, d: 600 }); idx++; }
+  steps.push({ i: winnerIdx, d: 700 }); // ...e crava o vencedor
+  return steps;
+}
+
+function runSpin(steps, render, onDone) {
+  let k = 0;
+  (function next() {
+    if (k >= steps.length) { onDone && onDone(); return; }
+    const s = steps[k++];
+    render(s.i);
+    if (s.d > 500) sfxHeartbeat(); else sfxTick();
+    setTimeout(next, s.d);
+  })();
+}
+
+/* ---------------- FLUXO DO SORTEIO ---------------- */
+let busy = false;
+
+function setupRound() {
+  renderSlots();
+  const pos = state.results.length + 1;
+  stageRound.textContent = "// rodada " + String(pos).padStart(2, "0") + " de " + String(AREAS.length).padStart(2, "0");
+
+  if (state.results.length >= AREAS.length) { showFinal(); return; }
+
+  if (state.pendingArea) {
+    // área já sorteada, falta o case
+    const area = AREAS.find((a) => a.nome === state.pendingArea);
+    stageLabel.textContent = "área sorteada — apresentação #" + pos;
+    stageDisplay.textContent = area.nome;
+    renderCaseList(area);
+    drawBtn.textContent = "> sortear case";
+    drawBtn.disabled = false;
+    drawBtn.onclick = () => drawCase(area);
+  } else {
+    stageLabel.textContent = "quem apresenta na posição #" + pos + "?";
+    stageDisplay.textContent = "?????????";
+    caseListEl.classList.remove("show");
+    caseListEl.innerHTML = "";
+    drawBtn.textContent = "> sortear área";
+    drawBtn.disabled = false;
+    drawBtn.onclick = drawArea;
+  }
+}
+
+function renderCaseList(area, winnerCase) {
+  caseListEl.innerHTML = "";
+  caseListEl.classList.add("show");
+  area.cases.forEach((c) => {
+    const div = document.createElement("div");
+    div.className = "case-item";
+    if (winnerCase) div.classList.add(c === winnerCase ? "winner" : "dead");
+    div.textContent = c.nome;
+    caseListEl.appendChild(div);
+  });
+}
+
+function drawArea() {
+  if (busy) return;
+  busy = true;
+  drawBtn.disabled = true;
+  const pool = remainingAreas();
+  const chosen = pool[rand(pool.length)];
+  const names = pool.map((a) => a.nome);
+  const stopMsgs = rotateLabel(names.length === 1 ? ["a última área do tanque..."] : AREA_MSGS);
+  const stopRiser = names.length === 1 ? () => {} : sfxRiser(4);
+
+  const decode = () => {
+    stopMsgs();
+    stageLabel.textContent = "sinal interceptado — decodificando...";
+    scrambleReveal(stageDisplay, chosen.nome, 3600, () => {
+      state.pendingArea = chosen.nome;
+      busy = false;
+      setupRound();
+      saveState();
+    });
+  };
+  const hold = () => {
+    stopRiser();
+    stageDisplay.textContent = "· · ·";
+    sfxHeartbeat();
+    setTimeout(decode, 1100);
+  };
+
+  if (names.length === 1) { hold(); return; }
+  // teaser: os nomes das áreas giram na tela sem cravar o resultado
+  runSpin(buildSpinSteps(names.length, null), (i) => {
+    stageDisplay.textContent = names[i];
+  }, hold);
+}
+
+function drawCase(area) {
+  if (busy) return;
+  busy = true;
+  drawBtn.disabled = true;
+  const chosen = area.cases[rand(area.cases.length)];
+  const items = [...caseListEl.children];
+  const winnerIdx = area.cases.indexOf(chosen);
+  const stopMsgs = rotateLabel(items.length === 1 ? ["case único da área — sem escapatória..."] : CASE_MSGS);
+  const stopRiser = items.length === 1 ? () => {} : sfxRiser(5);
+
+  function sharkAttackThenReveal() {
+    stopMsgs();
+    stopRiser();
+    stageLabel.textContent = "ALVO ADQUIRIDO";
+    sharkAttackEl.textContent = sharkFrame();
+    attackEl.classList.add("show");
+    sfxSharkAttack();
+    setTimeout(() => {
+      attackEl.classList.remove("show");
+      items.forEach((el) => el.classList.remove("hot"));
+      // registra o resultado e abre a tela cheia do case vencedor
+      state.results.push({ area: area.nome, caso: chosen });
+      state.pendingArea = null;
+      renderSlots();
+      renderCaseList(area, chosen);
+      stageDisplay.textContent = chosen.nome;
+      stageLabel.textContent = "apresentação #" + state.results.length + " definida";
+      saveState();
+      busy = false;
+      showWinner(area.nome, chosen, state.results.length);
+    }, 1500);
+  }
+
+  if (items.length === 1) {
+    items[0].classList.add("hot");
+    setTimeout(sharkAttackThenReveal, 1200);
+    return;
+  }
+  // roleta com parada falsa: desacelera, "para" no case errado e crava o vencedor
+  runSpin(buildSpinSteps(items.length, winnerIdx), (i) => {
+    items.forEach((el) => el.classList.remove("hot"));
+    items[i].classList.add("hot");
+  }, () => setTimeout(sharkAttackThenReveal, 350));
+}
+
+/* ---------------- TELA CHEIA DO CASE VENCEDOR ---------------- */
+function renderTools(tools) {
+  if (!tools) return "";
+  const list = Array.isArray(tools) ? tools : [tools];
+  const parts = list.map((t) => {
+    if (typeof t === "string") return t;
+    if (t && t.name) return t.highlight ? "<b>" + t.name + "</b>" : t.name;
+    return "";
+  }).filter(Boolean);
+  return "<b>Tools:</b> " + parts.join(", ") + ".";
+}
+
+function renderImpacto(impacto) {
+  if (!impacto || !impacto.length) return "";
+  return impacto.map((i) =>
+    '<div class="w-impacto-line"><b>' + i.label + ':</b> ' + i.value + "</div>"
+  ).join("");
+}
+
+function fadeInDetails() {
+  // Fade sequencial dos elementos das caixas — vem em cascata suave
+  const items = [
+    winnerAuthor, wDesafio, wStakeholder, wSolucao, wTools, wImpacto, wTimeToValue,
+  ];
+  items.forEach((el, i) => {
+    if (!el) return;
+    el.style.opacity = "0";
+    el.style.transition = "opacity 380ms ease-out";
+    setTimeout(() => { el.style.opacity = "1"; }, 90 + i * 110);
+  });
+}
+
+function clearDetails() {
+  winnerKicker.textContent = "";
+  winnerAuthor.textContent = "";
+  wDesafio.textContent = "";
+  wStakeholder.textContent = "";
+  wSolucao.textContent = "";
+  wTools.innerHTML = "";
+  wImpacto.innerHTML = "";
+  wTimeToValue.textContent = "";
+  winnerDetailEls.forEach((el) => { if (el) el.style.opacity = "0"; });
+}
+
+function openExtras() {
+  if (!currentExtrasContext) return;
+  const { area, caseObj, pos } = currentExtrasContext;
+  extrasKicker.innerHTML =
+    "USE CASE " + String(pos).padStart(2, "0") +
+    '<span class="sep">|</span>' + area;
+  extrasTitle.textContent = caseObj.nome;
+  const autor = caseObj.autor || "";
+  const dur = caseObj.duracao || "";
+  extrasAuthor.textContent =
+    autor && dur ? autor + "  |  " + dur : autor || dur;
+
+  extrasGrid.innerHTML = "";
+  (caseObj.extras || []).forEach((sc) => {
+    const wrap = document.createElement("div");
+    wrap.className = "extra-showcase";
+    const lbl = document.createElement("div");
+    lbl.className = "label";
+    lbl.textContent = sc.label || "";
+    const frame = document.createElement("div");
+    frame.className = "extra-frame";
+    if (sc.img) {
+      const im = document.createElement("img");
+      im.src = sc.img;
+      im.alt = sc.label || "";
+      // se a imagem não carregar (arquivo ainda não subiu), cai no placeholder
+      im.onerror = () => {
+        frame.innerHTML =
+          '<div class="extra-placeholder"><span class="icon">◈</span>' +
+          (sc.label || "") + "<br/>[ imagem indisponível ]</div>";
+      };
+      frame.appendChild(im);
+    } else {
+      frame.innerHTML =
+        '<div class="extra-placeholder"><span class="icon">◈</span>' +
+        (sc.label || "") + "<br/>[ preview ]</div>";
+    }
+    wrap.appendChild(lbl);
+    wrap.appendChild(frame);
+    extrasGrid.appendChild(wrap);
+  });
+
+  extrasModal.classList.add("show");
+  sfxRedPill();
+}
+function closeExtras() {
+  extrasModal.classList.remove("show");
+  sfxKey();
+}
+winnerMoreBtn.onclick = openExtras;
+extrasClose.onclick = closeExtras;
+extrasModal.addEventListener("click", (e) => {
+  if (e.target === extrasModal) closeExtras();
+});
+
+function showWinner(areaName, caseObj, pos) {
+  showScreen("winner");
+  clearDetails();
+
+  // Kicker: "USE CASE 01  |  ÁREA"
+  winnerKicker.innerHTML =
+    "USE CASE " + String(pos).padStart(2, "0") +
+    '<span class="sep">|</span>' + areaName;
+
+  // botão "ver mais_" aparece somente se o case tiver extras
+  const hasExtras = Array.isArray(caseObj.extras) && caseObj.extras.length > 0;
+  winnerMoreBtn.style.display = hasExtras ? "" : "none";
+  currentExtrasContext = hasExtras ? { area: areaName, caseObj, pos } : null;
+
+  winnerName.textContent = "";
+  winnerName.style.opacity = "1";
+  winnerNext.style.visibility = "hidden";
+  winnerNext.onclick = null;
+
+  const fx = REVEAL_FX[(pos - 1) % REVEAL_FX.length];
+  fx(winnerName, caseObj.nome, () => {
+    sfxVictory();
+
+    // Popula todos os detalhes já preenchidos (só o que existir)
+    const autor = caseObj.autor || "";
+    const dur = caseObj.duracao || "";
+    winnerAuthor.textContent =
+      autor && dur ? autor + "  |  " + dur : autor || dur;
+
+    wDesafio.textContent = caseObj.desafio || "";
+    wStakeholder.textContent = caseObj.stakeholder || "";
+    wSolucao.textContent = caseObj.solucao || "";
+    wTools.innerHTML = renderTools(caseObj.tools);
+    wImpacto.innerHTML = renderImpacto(caseObj.impacto);
+    wTimeToValue.textContent = caseObj.timeToValue
+      ? "Time-to-value: " + caseObj.timeToValue
+      : "";
+
+    fadeInDetails();
+
+    if (pos >= AREAS.length) {
+      winnerNext.textContent = "> ver ordem final_";
+      winnerNext.onclick = showFinal;
+    } else {
+      winnerNext.textContent = "> próximo sorteio_";
+      winnerNext.onclick = () => { showScreen("draw"); setupRound(); };
+    }
+    winnerNext.style.visibility = "visible";
+  });
+}
+
+/* ---------------- TELA FINAL ---------------- */
+function showFinal() {
+  showScreen("final");
+  finalBoard.innerHTML = "";
+  const lines = state.results.map(
+    (r, i) => String(i + 1).padStart(2, "0") + "  »  " + r.area + "  —  " + r.caso.nome
+  );
+  // efeito de digitação linha a linha
+  lines.forEach((text, li) => {
+    const div = document.createElement("div");
+    div.className = "line";
+    finalBoard.appendChild(div);
+    let ci = 0;
+    setTimeout(() => {
+      const iv = setInterval(() => {
+        div.textContent = text.slice(0, ++ci);
+        if (ci % 3 === 0) sfxKey();
+        if (ci >= text.length) clearInterval(iv);
+      }, 22);
+    }, li * (text.length * 22 + 250));
+  });
+}
+
+/* ---------------- RESET ---------------- */
+function doReset() {
+  if (!confirm("Reiniciar a simulação? Todo o sorteio será apagado.")) return;
+  state = { results: [], pendingArea: null };
+  clearState();
+  showScreen("intro");
+}
+document.getElementById("reset-btn").onclick = doReset;
+resetCorner.onclick = doReset;
+
+/* ---------------- PÍLULAS ---------------- */
+document.getElementById("pill-red").onclick = () => {
+  sfxRedPill();
+  showScreen("draw");
+  setupRound();
+};
+const blueMsg = document.getElementById("blue-msg");
+document.getElementById("pill-blue").onclick = () => {
+  sfxDenied();
+  blueMsg.classList.add("show");
+  setTimeout(() => blueMsg.classList.remove("show"), 3500);
+};
+
+/* ---------------- TECLADO ---------------- */
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && extrasModal.classList.contains("show")) {
+    e.preventDefault();
+    closeExtras();
+    return;
+  }
+  if (e.key === "Enter" || e.key === " ") {
+    if (extrasModal.classList.contains("show")) return; // não vaza pro botão next
+    if (screens.draw.classList.contains("active") && !drawBtn.disabled) {
+      e.preventDefault();
+      drawBtn.click();
+    } else if (screens.winner.classList.contains("active") && winnerNext.style.visibility !== "hidden") {
+      e.preventDefault();
+      winnerNext.click();
+    }
+  }
+});
+
+/* ---------------- BOOT (restaura sessão se houver) ---------------- */
+loadState();
+if (state.results.length >= AREAS.length) {
+  showFinal();
+} else if (state.results.length > 0 || state.pendingArea) {
+  showScreen("draw");
+  setupRound();
+}
+
+/* =============================================================
+   INTEGRAÇÃO COM APP DO BANCO (mobile)
+   Manda o estado do sorteio pro server periodicamente pra que
+   o app dos jogadores no celular receba os cases revelados.
+   Não muda nada da experiência do telão.
+   ============================================================= */
+(function bridge() {
+  const post = (path, body) =>
+    fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {}),
+    }).catch(() => {});
+
+  // Sync inicial das áreas + cases (o backend cacheia o catalogo completo)
+  post("/api/telao/areas", { areas: AREAS });
+
+  // Heartbeat com o estado atual do sorteio (a cada 3s).
+  // Assim, sempre que um novo case for revelado no telão, o
+  // backend cria o case aberto pra investir no app do banco.
+  let lastSig = "";
+  setInterval(() => {
+    const sig = JSON.stringify(state.results.map((r) => r.caso.nome)) + "|" + (state.pendingArea || "");
+    if (sig === lastSig) return;
+    lastSig = sig;
+    post("/api/telao/state", {
+      results: state.results,
+      pendingArea: state.pendingArea,
+    });
+  }, 1500);
+})();
+</script>
+</body>
+</html>

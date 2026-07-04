@@ -4,18 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
-  <title>Matrix Bank — Shark Tank</title>
+  <title>Shark Tank IA — Bank</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <canvas id="matrix-bg"></canvas>
+  <canvas id="rain"></canvas>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
 
-  <!-- Login / Register -->
+  <!-- ===================== LOGIN / REGISTER ===================== -->
   <section id="auth" class="auth-screen">
-    <div class="auth-card">
-      <div class="auth-logo">MATRIX BANK</div>
-      <div class="auth-subtitle">// SHARK TANK EDITION</div>
+    <h1 class="glitch auth-title" data-text="SHARK TANK">SHARK TANK</h1>
+    <div class="auth-tagline">// bank of the tank<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii"></pre>
 
+    <div class="auth-card">
       <div class="auth-tabs">
         <button class="auth-tab active" data-mode="register">Criar conta</button>
         <button class="auth-tab" data-mode="login">Entrar</button>
@@ -23,72 +26,73 @@
 
       <div class="field">
         <label for="auth-name">Nome do investidor</label>
-        <input id="auth-name" type="text" maxlength="24" autocomplete="off" placeholder="Ex: Nick" />
+        <input id="auth-name" type="text" maxlength="24" autocomplete="off" placeholder="ex: nick" />
       </div>
       <div class="field">
-        <label for="auth-pin">PIN (4 a 6 numeros)</label>
+        <label for="auth-pin">PIN (4 a 6 dígitos)</label>
         <input id="auth-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="****" />
       </div>
 
       <div class="error" id="auth-error"></div>
 
-      <button id="auth-submit" class="btn">ENTRAR NA MATRIX</button>
-
-      <p style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-dim);letter-spacing:2px;">
-        Cada jogador comeca com um saldo inicial.<br/>
-        Investe nos cases apresentados no Shark Tank.
-      </p>
+      <button id="auth-submit" class="btn">&gt; ENTRAR NO TANQUE</button>
     </div>
+
+    <p style="text-align:center;font-size:10px;color:var(--matrix-green-dim);letter-spacing:0.2em;margin-top:14px;">
+      cada investidor começa com um saldo inicial
+    </p>
   </section>
 
-  <!-- App -->
+  <!-- ===================== APP ===================== -->
   <div id="app" class="app" style="display:none">
     <header class="top-bar">
-      <div class="brand">
-        <div class="brand-title">MATRIX <span class="dim">BANK</span></div>
-        <button id="logout-btn" class="chip" style="font-size:10px;letter-spacing:2px;">SAIR</button>
+      <div class="top-row">
+        <div class="top-brand">SHARK <span class="dim">TANK BANK</span></div>
+        <button id="logout-btn" class="chip">SAIR</button>
       </div>
-      <div class="balance-card">
+      <div class="balance-strip">
         <div>
-          <div class="label">Saldo</div>
+          <div class="l">Saldo</div>
           <div class="name" id="user-name">—</div>
         </div>
-        <div class="value" id="user-balance">$ 0</div>
+        <div class="v" id="user-balance">$ 0</div>
       </div>
 
-      <div class="case-strip-wrap">
-        <div class="case-strip-label">
-          <span>&gt; CASES</span>
-          <span id="case-count" class="dim">0</span>
-        </div>
-        <div class="case-strip" id="case-strip"></div>
+      <div class="case-strip-label">
+        <span>&gt; CASES APRESENTADOS</span>
+        <span id="case-count">0</span>
       </div>
+      <div class="case-strip" id="case-strip"></div>
     </header>
 
     <main class="content">
       <!-- Case tab -->
       <section id="tab-case" class="tab active">
         <div id="case-view">
-          <div class="empty">Nenhum case ainda.<br/>Aguarde o host apresentar o primeiro pitch.</div>
+          <div class="waiting-panel">
+            <div style="font-size:11px;color:var(--matrix-green-dim);letter-spacing:0.25em;">&gt; STATUS</div>
+            <div class="w-blink">AGUARDANDO CASE_</div>
+            <div class="w-hint">o telão vai sortear o próximo pitch a qualquer momento</div>
+          </div>
         </div>
       </section>
 
       <!-- Wallet tab -->
       <section id="tab-wallet" class="tab">
-        <div class="section-title">&gt; Meus investimentos</div>
+        <div class="section-title">&gt; meus investimentos</div>
         <div class="panel">
-          <div id="my-invs" class="inv-list">
-            <div class="empty">Voce ainda nao investiu.</div>
+          <div id="my-invs">
+            <div class="empty">Você ainda não investiu em nenhum case.</div>
           </div>
         </div>
       </section>
 
       <!-- Ranking tab -->
       <section id="tab-rank" class="tab">
-        <div class="section-title">&gt; Ranking dos investidores</div>
+        <div class="section-title">&gt; ranking dos investidores</div>
         <div class="panel">
           <div id="rank-list">
-            <div class="empty">Sem jogadores ainda.</div>
+            <div class="empty">Sem investidores ainda.</div>
           </div>
         </div>
       </section>
@@ -96,20 +100,20 @@
 
     <nav class="bottom-nav">
       <button class="nav-btn active" data-tab="case">
-        <span class="ico">$</span>Case
+        <span class="ico">◈</span>Case
       </button>
       <button class="nav-btn" data-tab="wallet">
-        <span class="ico">#</span>Carteira
+        <span class="ico">$</span>Carteira
       </button>
       <button class="nav-btn" data-tab="rank">
-        <span class="ico">*</span>Ranking
+        <span class="ico">▲</span>Ranking
       </button>
     </nav>
   </div>
 
   <div id="toast-host"></div>
 
-  <script src="/js/matrix.js"></script>
+  <script src="/js/rain.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>
