@@ -23,6 +23,7 @@ function emptyDb() {
     sessions: {},
     cases: [],
     investments: [],
+    areas: [],              // catalogo enviado pelo telao
     startingBalance: STARTING_BALANCE,
   };
 }
@@ -63,7 +64,7 @@ function broadcast(type, payload) {
 // ---------- app ----------
 
 const app = express();
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '512kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -160,10 +161,18 @@ function publicCase(c) {
   const invs = db.investments.filter((i) => i.caseId === c.id);
   return {
     id: c.id,
-    company: c.company,
-    pitch: c.pitch,
-    askAmount: c.askAmount,
-    equity: c.equity,
+    area: c.area,
+    nome: c.nome,
+    autor: c.autor || '',
+    duracao: c.duracao || '',
+    desafio: c.desafio || '',
+    stakeholder: c.stakeholder || '',
+    solucao: c.solucao || '',
+    tools: c.tools || null,
+    impacto: c.impacto || null,
+    timeToValue: c.timeToValue || '',
+    extras: c.extras || null,
+    pos: c.pos || 0,
     status: c.status,
     multiplier: c.multiplier ?? null,
     createdAt: c.createdAt,
@@ -174,7 +183,7 @@ function publicCase(c) {
 }
 
 app.get('/api/cases', (req, res) => {
-  const list = [...db.cases].sort((a, b) => b.createdAt - a.createdAt).map(publicCase);
+  const list = [...db.cases].sort((a, b) => a.createdAt - b.createdAt).map(publicCase);
   res.json({ cases: list });
 });
 
@@ -187,6 +196,23 @@ app.get('/api/cases/:id', (req, res) => {
   const c = db.cases.find((x) => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'nao_encontrado' });
   res.json({ case: publicCase(c) });
+});
+
+app.get('/api/cases/:id/feed', (req, res) => {
+  const invs = db.investments
+    .filter((i) => i.caseId === req.params.id)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 30)
+    .map((i) => {
+      const user = db.users.find((u) => u.id === i.userId);
+      return {
+        id: i.id,
+        amount: i.amount,
+        createdAt: i.createdAt,
+        userName: user?.name || '???',
+      };
+    });
+  res.json({ investments: invs });
 });
 
 app.get('/api/cases/:id/investments', requireUser, (req, res) => {
@@ -245,7 +271,8 @@ app.get('/api/investments/mine', requireUser, (req, res) => {
         payout: i.payout ?? null,
         createdAt: i.createdAt,
         caseId: i.caseId,
-        caseCompany: c?.company || 'Case removido',
+        caseNome: c?.nome || 'Case removido',
+        caseArea: c?.area || '',
         caseStatus: c?.status || 'unknown',
       };
     });
@@ -257,6 +284,70 @@ app.get('/api/ranking', (req, res) => {
     .map((u) => ({ id: u.id, name: u.name, balance: u.balance }))
     .sort((a, b) => b.balance - a.balance);
   res.json({ ranking: list });
+});
+
+// ---------- integracao com o telao ----------
+
+// telaoKey = identificador unico do case baseado em area + nome
+function telaoKey(area, nome) {
+  return String(area).trim() + '::' + String(nome).trim();
+}
+
+// telao envia o catalogo completo (AREAS) 1x no boot
+app.post('/api/telao/areas', (req, res) => {
+  const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
+  db.areas = areas;
+  save();
+  res.json({ ok: true, count: areas.length });
+});
+
+// telao envia o estado do sorteio a cada mudanca
+// results: [{ area: "STRATEGY", caso: { nome, autor, desafio, ... } }]
+app.post('/api/telao/state', (req, res) => {
+  const results = Array.isArray(req.body?.results) ? req.body.results : [];
+  let created = 0;
+
+  results.forEach((r, idx) => {
+    if (!r || !r.caso || !r.caso.nome) return;
+    const key = telaoKey(r.area, r.caso.nome);
+    const existing = db.cases.find((c) => c.telaoKey === key);
+    if (existing) return;
+    const c = {
+      id: newId(),
+      telaoKey: key,
+      area: r.area,
+      nome: r.caso.nome,
+      autor: r.caso.autor || '',
+      duracao: r.caso.duracao || '',
+      desafio: r.caso.desafio || '',
+      stakeholder: r.caso.stakeholder || '',
+      solucao: r.caso.solucao || '',
+      tools: r.caso.tools || null,
+      impacto: r.caso.impacto || null,
+      timeToValue: r.caso.timeToValue || '',
+      extras: r.caso.extras || null,
+      pos: idx + 1,
+      status: 'open',
+      multiplier: null,
+      createdAt: Date.now() + idx, // preserva ordem mesmo em batch
+      resolvedAt: null,
+    };
+    db.cases.push(c);
+    broadcast('case-created', publicCase(c));
+    created++;
+  });
+
+  if (created > 0) save();
+  res.json({ ok: true, created });
+});
+
+app.post('/api/telao/reset', (req, res) => {
+  db.cases = [];
+  db.investments = [];
+  for (const u of db.users) u.balance = db.startingBalance;
+  save();
+  broadcast('reset', {});
+  res.json({ ok: true });
 });
 
 // ---------- admin ----------
@@ -277,29 +368,6 @@ app.post('/api/admin/logout', (req, res) => {
 
 app.get('/api/admin/me', (req, res) => {
   res.json({ isAdmin: req.cookies?.admin === hash(ADMIN_PASSWORD) });
-});
-
-app.post('/api/admin/cases', requireAdmin, (req, res) => {
-  const company = String(req.body?.company || '').trim();
-  const pitch = String(req.body?.pitch || '').trim();
-  const askAmount = Math.floor(Number(req.body?.askAmount || 0));
-  const equity = Number(req.body?.equity || 0);
-  if (!company || !pitch || askAmount <= 0 || equity <= 0 || equity > 100) {
-    return res.status(400).json({ error: 'dados_invalidos' });
-  }
-  const c = {
-    id: newId(),
-    company, pitch, askAmount, equity,
-    status: 'open',
-    multiplier: null,
-    createdAt: Date.now(),
-    resolvedAt: null,
-  };
-  db.cases.push(c);
-  save();
-  const pc = publicCase(c);
-  broadcast('case-created', pc);
-  res.json({ case: pc });
 });
 
 app.post('/api/admin/cases/:id/close', requireAdmin, (req, res) => {
@@ -332,7 +400,6 @@ app.delete('/api/admin/cases/:id', requireAdmin, (req, res) => {
   if (c.status === 'closed') {
     return res.status(400).json({ error: 'nao_pode_apagar_fechado' });
   }
-  // Devolve o dinheiro dos investidores
   for (const inv of db.investments.filter((i) => i.caseId === c.id)) {
     const u = db.users.find((x) => x.id === inv.userId);
     if (u) u.balance += inv.amount;
@@ -401,6 +468,10 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+app.get('/telao', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'telao.html'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -408,4 +479,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Shark Tank Matrix Bank rodando na porta ${PORT}`);
   console.log(`Admin: /admin  (senha: ${ADMIN_PASSWORD === 'shark' ? 'shark (padrao)' : 'via env'})`);
+  console.log(`Telao: /telao`);
 });
