@@ -12,34 +12,68 @@
   <div class="scanlines"></div>
   <div class="vignette"></div>
 
-  <!-- ===================== ESCOLHER TIME (login) ===================== -->
-  <section id="pick-team" class="auth-screen">
+  <!-- ===================== FASE: APRESENTAÇÃO (aguardando abrir rodada) ===================== -->
+  <section id="phase-presenting" class="auth-screen" style="display:none">
     <h1 class="glitch auth-title" data-text="SHARK TANK">SHARK TANK</h1>
     <div class="auth-tagline">// bank of the tank<span class="cursor">&nbsp;</span></div>
-    <pre id="shark-ascii"></pre>
-
-    <div class="pick-card">
-      <div class="pick-label">&gt; SELECIONE SEU TIME</div>
-      <div class="team-list" id="team-list">
-        <div class="empty">Carregando...</div>
+    <pre id="shark-ascii-presenting" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; STATUS</div>
+      <div class="w-blink">APRESENTAÇÃO EM ANDAMENTO_</div>
+      <div class="w-hint">
+        acompanhe o telão. a rodada de investimento vai abrir logo mais.
       </div>
     </div>
-
-    <p class="pick-hint">
-      cada time compartilha o saldo &middot; qualquer membro pode investir
-    </p>
   </section>
 
-  <!-- ===================== APP ===================== -->
-  <div id="app" class="app" style="display:none">
+  <!-- ===================== FASE: LOGIN (rodada aberta) ===================== -->
+  <section id="phase-login" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="SHARK TANK">SHARK TANK</h1>
+    <div class="auth-tagline">// bank of the tank — invista já<span class="cursor">&nbsp;</span></div>
+
+    <div class="login-card">
+      <div class="pick-label">&gt; SUAS CREDENCIAIS DE INVESTIDOR</div>
+      <div class="field">
+        <label for="login-name">Nome</label>
+        <input id="login-name" type="text" autocomplete="off" maxlength="40" placeholder="Ex: NICK" />
+      </div>
+      <div class="field">
+        <label for="login-area">Sua área</label>
+        <select id="login-area">
+          <option value="">— selecione —</option>
+        </select>
+      </div>
+      <div class="error" id="login-err"></div>
+      <button id="login-btn" class="btn">&gt; ENTRAR NO TANQUE</button>
+      <p class="pick-hint">
+        você recebe <b id="login-starting-balance">$ 500.000</b> pra investir nos cases apresentados.
+        <br/>tempo: <b>1:30</b> depois disso, a bolsa fecha.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== FASE: INVESTINDO (app principal) ===================== -->
+  <div id="phase-investing" class="app" style="display:none">
     <header class="top-bar">
       <div class="top-row">
         <div class="top-brand">SHARK <span class="dim">TANK BANK</span></div>
-        <button id="logout-btn" class="chip">TROCAR TIME</button>
+        <button id="logout-btn" class="chip">SAIR</button>
       </div>
+
+      <!-- Timer individual do jogador -->
+      <div id="player-timer">
+        <div class="timer-line">
+          <span class="l">&gt; TEMPO RESTANTE</span>
+          <span class="v" id="timer-display">01:30</span>
+        </div>
+        <div class="timer-bar-container">
+          <div class="timer-bar-fill" id="player-timer-fill"></div>
+        </div>
+      </div>
+
       <div class="balance-strip">
         <div>
-          <div class="l">Saldo do time</div>
+          <div class="l">Saldo do investidor</div>
           <div class="name" id="team-name">—</div>
         </div>
         <div class="v" id="team-balance">$ 0</div>
@@ -53,20 +87,18 @@
     </header>
 
     <main class="content">
-      <!-- Case tab -->
       <section id="tab-case" class="tab active">
         <div id="case-view">
           <div class="waiting-panel">
             <div class="w-status">&gt; STATUS</div>
             <div class="w-blink">AGUARDANDO CASE_</div>
-            <div class="w-hint">o telão vai sortear o próximo pitch a qualquer momento</div>
+            <div class="w-hint">selecione um dos cases apresentados acima pra investir</div>
           </div>
         </div>
       </section>
 
-      <!-- Wallet tab -->
       <section id="tab-wallet" class="tab">
-        <div class="section-title">&gt; posições do time</div>
+        <div class="section-title">&gt; posições do investidor</div>
         <div class="panel" id="my-positions">
           <div class="empty">Ainda sem posições.</div>
         </div>
@@ -74,16 +106,6 @@
         <div class="panel">
           <div id="my-transactions">
             <div class="empty">Sem movimentações ainda.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Ranking tab -->
-      <section id="tab-rank" class="tab">
-        <div class="section-title">&gt; ranking dos times</div>
-        <div class="panel">
-          <div id="rank-list">
-            <div class="empty">Carregando...</div>
           </div>
         </div>
       </section>
@@ -96,11 +118,37 @@
       <button class="nav-btn" data-tab="wallet">
         <span class="ico">$</span>Carteira
       </button>
-      <button class="nav-btn" data-tab="rank">
-        <span class="ico">▲</span>Ranking
-      </button>
     </nav>
   </div>
+
+  <!-- ===================== FASE: TIMER ESGOTADO (aguardando outros) ===================== -->
+  <section id="phase-waiting" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="TEMPO ESGOTADO">TEMPO ESGOTADO</h1>
+    <div class="auth-tagline">// a bolsa fechou pra você<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii-waiting" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; STATUS</div>
+      <div class="w-blink">AGUARDANDO OUTROS INVESTIDORES_</div>
+      <div class="w-hint">
+        <span id="waiting-counter">0 de 0 finalizaram</span>
+        <br/>o resultado será revelado no telão. mantenha os olhos abertos.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FASE: REVELAÇÃO (só telão mostra) ===================== -->
+  <section id="phase-revealing" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="REVELAÇÃO">REVELAÇÃO</h1>
+    <div class="auth-tagline">// o tubarão está escolhendo o vencedor<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii-revealing" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; VEJA O TELÃO</div>
+      <div class="w-blink" id="revealing-blink">DECODIFICANDO VENCEDOR_</div>
+      <div class="w-hint" id="revealing-hint">
+        o resultado aparece no telão. este dispositivo apenas espera.
+      </div>
+    </div>
+  </section>
 
   <!-- ===================== PIX MODAL ===================== -->
   <div id="pix-modal" class="pix-modal" style="display:none">
@@ -157,6 +205,7 @@
   <div id="toast-host"></div>
 
   <script src="/js/rain.js"></script>
-  <script src="/js/app.js"></script>
+  <script src="/js/shark-ascii.js"></script>
+  <script src="/js/app.js?v=3"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 /* ============================================================
    SHARK TANK BANK — mobile
-   - Login = escolher time (sem cadastro)
-   - Investe estilo PIX (teclado + chips rápidos + comprovante)
-   - Pode RETIRAR investimento enquanto o case tá aberto
+   - Login = nome + área (participante recebe $500k)
+   - Timer individual de 90s por jogador
+   - Fases: presenting | investing | revealing | revealed
    ============================================================ */
 
 const $ = (s) => document.querySelector(s);
@@ -18,7 +18,8 @@ const fmtCompact = (n) => {
 };
 
 const api = async (path, opts = {}) => {
-  const res = await fetch(path, {
+  const url = path + (path.includes('?') ? '&' : '?') + 't=' + Date.now();
+  const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
@@ -50,45 +51,192 @@ let state = {
   team: null,
   cases: [],
   currentCaseId: null,
-  positions: [], // [{caseId, position}]
+  positions: [],
+  gameState: 'presenting',
+  participantsTotal: 0,
+  participantsFinalized: 0,
+  investWindowMs: 90 * 1000,
+  investingStartedAt: null,
+  finalizedAt: null,
+  areas: [],
 };
 
-/* ---------------- TEAM PICKER ---------------- */
-async function loadTeams() {
-  try {
-    const d = await api('/api/teams');
-    const box = $('#team-list');
-    if (!d.teams.length) {
-      box.innerHTML = '<div class="empty">Nenhum time disponível.</div>';
-      return;
-    }
-    box.innerHTML = d.teams.map((t) => `
-      <button class="team-card" data-name="${escapeHtml(t.name)}">
-        <span class="team-icon">◈</span>
-        <span class="team-info">
-          <span class="n">${escapeHtml(t.name)}</span>
-          <span class="b">saldo: ${fmtMoney(t.balance)}</span>
-        </span>
-        <span class="team-enter">&gt;</span>
-      </button>
-    `).join('');
-    box.querySelectorAll('.team-card').forEach((btn) => {
-      btn.addEventListener('click', () => pickTeam(btn.dataset.name));
-    });
-  } catch (e) {
-    $('#team-list').innerHTML = '<div class="empty">Erro ao carregar times.</div>';
+let sharkAnims = [];
+
+/* ---------------- PHASE ROUTING ---------------- */
+
+const PHASES = ['presenting', 'login', 'investing', 'waiting', 'revealing'];
+
+function showPhase(phase) {
+  for (const p of PHASES) {
+    const el = document.getElementById('phase-' + p);
+    if (el) el.style.display = 'none';
+  }
+  const target = document.getElementById('phase-' + phase);
+  if (target) {
+    target.style.display = (phase === 'investing') ? 'flex' : 'flex';
+  }
+
+  // para shark ascii, tocar em qualquer tela que use
+  for (const a of sharkAnims) a.stop();
+  sharkAnims = [];
+  const asciiEl = target && target.querySelector && target.querySelector('.shark-ascii-block');
+  if (asciiEl && window.animateShark) sharkAnims.push(window.animateShark(asciiEl, 110));
+}
+
+function routeByGameState() {
+  const gs = state.gameState;
+  if (gs === 'revealing' || gs === 'revealed') {
+    showPhase('revealing');
+    updateRevealingCopy();
+    return;
+  }
+  if (gs === 'presenting') {
+    showPhase('presenting');
+    return;
+  }
+  // investing
+  if (!state.team) {
+    showPhase('login');
+    return;
+  }
+  if (state.finalizedAt || timerRemainingMs() <= 0) {
+    showPhase('waiting');
+    updateWaitingCounter();
+    return;
+  }
+  showPhase('investing');
+}
+
+function updateRevealingCopy() {
+  const blink = $('#revealing-blink');
+  const hint = $('#revealing-hint');
+  if (state.gameState === 'revealed') {
+    if (blink) blink.textContent = 'VENCEDOR REVELADO_';
+    if (hint) hint.textContent = 'o resultado está no telão. obrigado por investir.';
+  } else {
+    if (blink) blink.textContent = 'DECODIFICANDO VENCEDOR_';
+    if (hint) hint.textContent = 'o resultado aparece no telão. este dispositivo apenas espera.';
   }
 }
 
-async function pickTeam(name) {
+function updateWaitingCounter() {
+  const el = $('#waiting-counter');
+  if (el) el.textContent = `${state.participantsFinalized} de ${state.participantsTotal} finalizaram`;
+}
+
+/* ---------------- LOGIN ---------------- */
+
+async function loadAreas() {
   try {
-    const data = await api('/api/team-login', { method: 'POST', body: { name } });
-    state.team = data;
-    onLogin();
+    const d = await api('/api/areas');
+    state.areas = d.areas || [];
+    const select = $('#login-area');
+    if (select) {
+      // preserve first placeholder option
+      const opts = ['<option value="">— selecione —</option>'];
+      for (const a of state.areas) {
+        opts.push(`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`);
+      }
+      select.innerHTML = opts.join('');
+    }
   } catch (e) {
-    toast('Não foi possível entrar no time', 'error');
+    console.error('erro carregando areas', e);
   }
 }
+
+async function submitLogin() {
+  const name = $('#login-name').value.trim();
+  const area = $('#login-area').value.trim();
+  const errEl = $('#login-err');
+  errEl.textContent = '';
+
+  if (!name) { errEl.textContent = '> informe seu nome'; return; }
+  if (!area) { errEl.textContent = '> selecione sua área'; return; }
+
+  try {
+    const data = await api('/api/team-login', { method: 'POST', body: { name, area } });
+    state.team = { id: data.id, name: data.name, area: data.area, balance: data.balance };
+    state.investingStartedAt = data.investingStartedAt;
+    state.finalizedAt = null;
+    state.investWindowMs = data.investWindowMs || state.investWindowMs;
+    await afterLogin();
+  } catch (e) {
+    const map = {
+      fase_invalida: 'A rodada não está aberta agora.',
+      nome_obrigatorio: 'Informe seu nome.',
+      area_obrigatoria: 'Selecione uma área.',
+      area_invalida: 'Área inválida.',
+    };
+    errEl.textContent = '> ' + (map[e.data?.error] || 'não foi possível entrar');
+  }
+}
+
+async function afterLogin() {
+  routeByGameState();
+  renderTeam();
+  await loadMyStuff();
+  await fetchCases();
+  startClientTimer();
+}
+
+/* ---------------- TIMER INDIVIDUAL ---------------- */
+
+let timerInterval = null;
+
+function timerRemainingMs() {
+  if (!state.investingStartedAt) return state.investWindowMs;
+  const elapsed = Date.now() - state.investingStartedAt;
+  return Math.max(0, state.investWindowMs - elapsed);
+}
+
+function fmtTimerMs(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  const m = String(Math.floor(s / 60)).padStart(2, '0');
+  const r = String(s % 60).padStart(2, '0');
+  return m + ':' + r;
+}
+
+function renderTimer() {
+  const rem = timerRemainingMs();
+  const disp = $('#timer-display');
+  const fill = $('#player-timer-fill');
+  if (disp) disp.textContent = fmtTimerMs(rem);
+  if (fill) {
+    const pct = Math.max(0, Math.min(100, (rem / state.investWindowMs) * 100));
+    fill.style.width = pct + '%';
+    if (pct < 20) fill.classList.add('critical');
+    else fill.classList.remove('critical');
+  }
+  if (rem <= 0) {
+    handleTimerExpired();
+  }
+}
+
+function startClientTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  renderTimer();
+  timerInterval = setInterval(renderTimer, 500);
+}
+
+function stopClientTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+async function handleTimerExpired() {
+  if (state.finalizedAt) return;
+  state.finalizedAt = Date.now();
+  stopClientTimer();
+  try {
+    await api('/api/finalize', { method: 'POST', body: {} });
+  } catch (e) { /* backend vai revalidar */ }
+  routeByGameState();
+}
+
+/* ---------------- LOGOUT ---------------- */
 
 $('#logout-btn').addEventListener('click', async () => {
   await api('/api/logout', { method: 'POST' }).catch(() => {});
@@ -96,20 +244,22 @@ $('#logout-btn').addEventListener('click', async () => {
 });
 
 /* ---------------- TABS ---------------- */
+
 $$('.nav-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
     $$('.nav-btn').forEach((b) => b.classList.toggle('active', b === btn));
     $$('.tab').forEach((t) => t.classList.toggle('active', t.id === 'tab-' + tab));
     if (tab === 'wallet') loadMyStuff();
-    if (tab === 'rank') loadRanking();
   });
 });
 
 /* ---------------- RENDER ---------------- */
+
 function renderTeam() {
   if (!state.team) return;
-  $('#team-name').textContent = '@' + state.team.name;
+  const areaSuffix = state.team.area ? ` <span class="dim">(${escapeHtml(state.team.area)})</span>` : '';
+  $('#team-name').innerHTML = '@' + escapeHtml(state.team.name) + areaSuffix;
   $('#team-balance').textContent = fmtMoney(state.team.balance);
 }
 
@@ -124,8 +274,10 @@ function currentCase() {
 
 function renderCaseStrip() {
   const strip = $('#case-strip');
+  if (!strip) return;
   strip.innerHTML = '';
-  $('#case-count').textContent = state.cases.length;
+  const cnt = $('#case-count');
+  if (cnt) cnt.textContent = state.cases.length;
 
   if (state.cases.length === 0) {
     strip.innerHTML =
@@ -161,20 +313,18 @@ function selectCase(id) {
   state.currentCaseId = id;
   renderCaseStrip();
   renderCaseView();
-  $$('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === 'case'));
-  $$('.tab').forEach((t) => t.classList.toggle('active', t.id === 'tab-case'));
-  loadCaseFeed(id);
 }
 
 function renderCaseView() {
   const c = currentCase();
   const view = $('#case-view');
+  if (!view) return;
   if (!c) {
     view.innerHTML = `
       <div class="waiting-panel">
         <div class="w-status">&gt; STATUS</div>
         <div class="w-blink">AGUARDANDO CASE_</div>
-        <div class="w-hint">o telão vai sortear o próximo pitch a qualquer momento</div>
+        <div class="w-hint">selecione um dos cases apresentados acima pra investir</div>
       </div>
     `;
     return;
@@ -189,17 +339,16 @@ function renderCaseView() {
 
   const positionBadge = pos > 0 ? `
     <div class="position-badge">
-      <span class="l">Posição do time</span>
+      <span class="l">Sua posição</span>
       <span class="v">${fmtMoney(pos)}</span>
-    </div>
-  ` : '';
+    </div>` : '';
 
-  const actionRow = isOpen ? `
-    <div class="action-row">
+  const canInvest = isOpen && !state.finalizedAt && timerRemainingMs() > 0;
+  const actionRow = canInvest ? `
+    <div class="action-row" style="grid-template-columns: 1fr;">
       <button class="btn" id="btn-invest">&gt; INVESTIR</button>
-      <button class="btn ghost" id="btn-withdraw" ${pos > 0 ? '' : 'disabled'}>&gt; RETIRAR</button>
     </div>
-  ` : renderResultBlock(c, pos);
+  ` : '<div class="action-row"><div class="btn ghost disabled">' + (isOpen ? 'TEMPO ESGOTADO' : 'ENCERRADO') + '</div></div>';
 
   view.innerHTML = `
     <div class="panel">
@@ -216,7 +365,7 @@ function renderCaseView() {
           <div style="font-size:15px;color:var(--matrix-green);font-variant-numeric:tabular-nums;margin-top:2px;">${fmtMoney(c.netInvested || 0)}</div>
         </div>
         <div style="border:1px solid var(--matrix-green-dark);padding:8px 10px;background:rgba(0,8,2,0.7);">
-          <div style="font-size:9px;letter-spacing:0.25em;color:var(--matrix-green-dim);text-transform:uppercase;">Times investindo</div>
+          <div style="font-size:9px;letter-spacing:0.25em;color:var(--matrix-green-dim);text-transform:uppercase;">Apoiadores</div>
           <div style="font-size:15px;color:var(--matrix-green);font-variant-numeric:tabular-nums;margin-top:2px;">${c.investorCount || 0}</div>
         </div>
       </div>
@@ -224,50 +373,12 @@ function renderCaseView() {
       ${positionBadge}
       ${actionRow}
     </div>
-
-    <div class="section-title">&gt; posições dos times neste case</div>
-    <div class="panel">
-      <div id="case-feed">
-        <div class="empty">Carregando...</div>
-      </div>
-    </div>
   `;
 
-  if (isOpen) {
-    $('#btn-invest').addEventListener('click', () => openPix('invest', c));
-    const wBtn = $('#btn-withdraw');
-    if (wBtn) wBtn.addEventListener('click', () => openPix('withdraw', c));
+  if (canInvest) {
+    const btn = $('#btn-invest');
+    if (btn) btn.addEventListener('click', () => openPix('invest', c));
   }
-}
-
-function renderResultBlock(c, pos) {
-  const m = c.multiplier ?? 0;
-  const payout = Math.floor(pos * m);
-  const diff = payout - pos;
-  let note = '';
-  if (m >= 3) note = 'JACKPOT! ' + m.toFixed(1) + 'x';
-  else if (m >= 2) note = 'Ótimo negócio — dobrou (ou mais)';
-  else if (m > 1) note = 'Retorno positivo';
-  else if (m === 1) note = 'Empatou';
-  else if (m > 0) note = 'Prejuízo — retorno parcial';
-  else note = 'Empresa quebrou — perde tudo';
-
-  const myLine = pos > 0
-    ? `<div style="margin-top:8px;font-size:12px;line-height:1.6;">
-        Investiu <span style="color:var(--matrix-green);font-variant-numeric:tabular-nums;">${fmtMoney(pos)}</span>
-        e recebeu <span style="color:${diff >= 0 ? 'var(--matrix-green)' : 'var(--matrix-red)'};font-variant-numeric:tabular-nums;">${fmtMoney(payout)}</span>
-        (${diff >= 0 ? '+' : ''}${fmtMoney(diff)})
-      </div>`
-    : '<div style="margin-top:8px;font-size:12px;color:var(--matrix-green-dim);">Seu time não investiu neste case.</div>';
-
-  return `
-    <div class="closed-result">
-      <div class="l">&gt; resultado</div>
-      <div class="multi">${m.toFixed(2)}x</div>
-      <div class="note">${note}</div>
-      ${myLine}
-    </div>
-  `;
 }
 
 /* ---------------- PIX MODAL ---------------- */
@@ -285,26 +396,19 @@ const pixTarget = $('#pix-target');
 const pixConfirm = $('#pix-confirm');
 
 function openPix(mode, c) {
+  if (state.finalizedAt || timerRemainingMs() <= 0) {
+    toast('Tempo esgotado', 'error');
+    return;
+  }
   pixMode = mode;
   pixCase = c;
   pixAmount = 0;
-
-  if (mode === 'invest') {
-    pixMaxAvailable = state.team.balance;
-    pixKicker.textContent = '> INVESTIR EM';
-    pixConfirm.textContent = '> CONFIRMAR INVESTIMENTO';
-    pixConfirm.classList.remove('danger');
-    pixBalanceLabel.textContent = 'Saldo do time';
-    pixBalanceValue.textContent = fmtMoney(state.team.balance);
-  } else {
-    pixMaxAvailable = myPositionIn(c.id);
-    pixKicker.textContent = '> RETIRAR DE';
-    pixConfirm.textContent = '> CONFIRMAR RETIRADA';
-    pixConfirm.classList.add('danger');
-    pixBalanceLabel.textContent = 'Posição atual';
-    pixBalanceValue.textContent = fmtMoney(pixMaxAvailable);
-  }
-
+  pixMaxAvailable = state.team.balance;
+  pixKicker.textContent = '> INVESTIR EM';
+  pixConfirm.textContent = '> CONFIRMAR INVESTIMENTO';
+  pixConfirm.classList.remove('danger');
+  pixBalanceLabel.textContent = 'Saldo do investidor';
+  pixBalanceValue.textContent = fmtMoney(state.team.balance);
   pixTarget.innerHTML = `${escapeHtml(c.nome)}<br/><span style="font-size:11px;color:var(--matrix-green-dim);letter-spacing:0.2em;">${escapeHtml(c.area)}</span>`;
   renderPixAmount();
   pixModal.style.display = 'flex';
@@ -325,23 +429,17 @@ function renderPixAmount() {
 $('#pix-close').addEventListener('click', closePix);
 pixModal.addEventListener('click', (e) => { if (e.target === pixModal) closePix(); });
 
-// teclado numérico
 $$('#pix-modal .pix-pad button').forEach((btn) => {
   btn.addEventListener('click', () => {
     const k = btn.dataset.k;
-    if (k === 'del') {
-      pixAmount = Math.floor(pixAmount / 10);
-    } else if (k === '000') {
-      pixAmount = pixAmount * 1000;
-    } else {
-      pixAmount = pixAmount * 10 + Number(k);
-    }
+    if (k === 'del') pixAmount = Math.floor(pixAmount / 10);
+    else if (k === '000') pixAmount = pixAmount * 1000;
+    else pixAmount = pixAmount * 10 + Number(k);
     if (pixAmount > 999_999_999) pixAmount = 999_999_999;
     renderPixAmount();
   });
 });
 
-// chips rápidos
 $$('#pix-quick .chip').forEach((btn) => {
   btn.addEventListener('click', () => {
     if (btn.dataset.max) { pixAmount = pixMaxAvailable; renderPixAmount(); return; }
@@ -353,42 +451,42 @@ $$('#pix-quick .chip').forEach((btn) => {
 
 pixConfirm.addEventListener('click', async () => {
   if (pixAmount <= 0 || pixAmount > pixMaxAvailable) return;
-  const url = pixMode === 'invest'
-    ? `/api/cases/${pixCase.id}/invest`
-    : `/api/cases/${pixCase.id}/withdraw`;
+  const url = `/api/cases/${pixCase.id}/invest`;
   try {
     pixConfirm.disabled = true;
     pixConfirm.textContent = '> processando...';
     const res = await api(url, { method: 'POST', body: { amount: pixAmount } });
     state.team.balance = res.balance;
-    // atualiza posicoes local
     const p = state.positions.find((x) => x.caseId === pixCase.id);
     if (p) p.position = res.position;
     else state.positions.push({ caseId: pixCase.id, position: res.position });
 
     closePix();
-    showReceipt(pixMode, pixAmount, pixCase);
+    showReceipt('invest', pixAmount, pixCase);
     renderTeam();
-    await refreshCases({ keepCurrent: true });
-    loadCaseFeed(pixCase.id);
+    await fetchCases(true);
   } catch (e) {
     const map = {
       saldo_insuficiente: 'Saldo insuficiente',
-      valor_maior_que_posicao: 'Valor maior que a posição',
       caso_fechado: 'Case já foi encerrado',
       valor_invalido: 'Valor inválido',
-      sem_posicao: 'Sem posição pra retirar',
+      rodada_fechada: 'Rodada fechada',
+      tempo_esgotado: 'Seu tempo acabou',
     };
     toast(map[e.data?.error] || 'Erro na transação', 'error');
+    if (e.data?.error === 'tempo_esgotado') {
+      state.finalizedAt = Date.now();
+      routeByGameState();
+    }
     pixConfirm.disabled = false;
-    pixConfirm.textContent = pixMode === 'invest' ? '> CONFIRMAR INVESTIMENTO' : '> CONFIRMAR RETIRADA';
+    pixConfirm.textContent = '> CONFIRMAR INVESTIMENTO';
   }
 });
 
 /* ---------------- RECEIPT ---------------- */
 function showReceipt(mode, amount, c) {
-  $('#receipt-title').textContent = mode === 'invest' ? 'INVESTIMENTO OK' : 'RETIRADA OK';
-  $('#receipt-amount').textContent = (mode === 'invest' ? '- ' : '+ ') + fmtMoney(amount);
+  $('#receipt-title').textContent = 'INVESTIMENTO OK';
+  $('#receipt-amount').textContent = '- ' + fmtMoney(amount);
   $('#receipt-info').innerHTML = `${escapeHtml(c.nome)}<br/><span style="color:var(--matrix-green-dim);">${escapeHtml(c.area)}</span>`;
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, '0');
@@ -405,39 +503,36 @@ async function refreshMe() {
     const d = await api('/api/me');
     if (!d.team) return null;
     state.team = d.team;
+    state.investingStartedAt = d.team.investingStartedAt || null;
+    state.finalizedAt = d.team.finalizedAt || null;
+    state.investWindowMs = d.investWindowMs || state.investWindowMs;
     renderTeam();
     return d.team;
   } catch { return null; }
 }
 
-async function refreshCases({ keepCurrent = false } = {}) {
-  const d = await api('/api/cases');
-  state.cases = d.cases;
-  if (!keepCurrent || !state.currentCaseId || !state.cases.find((c) => c.id === state.currentCaseId)) {
-    const open = [...state.cases].reverse().find((c) => c.status === 'open');
-    state.currentCaseId = open?.id || state.cases[state.cases.length - 1]?.id || null;
-  }
-  renderCaseStrip();
-  renderCaseView();
-  if (state.currentCaseId) loadCaseFeed(state.currentCaseId);
+async function fetchGameState() {
+  try {
+    const d = await api('/api/game-state');
+    state.gameState = d.state;
+    state.participantsTotal = d.participantsTotal;
+    state.participantsFinalized = d.participantsFinalized;
+  } catch (e) { /* ignora */ }
 }
 
-async function loadCaseFeed(caseId) {
+async function fetchCases(keepCurrent = false) {
   try {
-    const d = await api(`/api/cases/${caseId}/feed`);
-    const box = $('#case-feed');
-    if (!box) return;
-    if (!d.positions.length) {
-      box.innerHTML = '<div class="empty" style="padding:14px;">Nenhum time investiu ainda.</div>';
-      return;
+    const d = await api('/api/cases');
+    state.cases = d.cases || [];
+
+    if (!keepCurrent || !state.currentCaseId || !state.cases.find((c) => c.id === state.currentCaseId)) {
+      const open = [...state.cases].reverse().find((c) => c.status === 'open');
+      state.currentCaseId = open?.id || state.cases[state.cases.length - 1]?.id || null;
     }
-    box.innerHTML = d.positions.map((p) => `
-      <div class="feed-row">
-        <span class="team ${p.teamId === state.team.id ? 'me' : ''}">${escapeHtml(p.teamName)}</span>
-        <span class="amt">${fmtMoney(p.amount)}</span>
-      </div>
-    `).join('');
-  } catch {}
+
+    renderCaseStrip();
+    renderCaseView();
+  } catch (e) { console.error('erro cases', e); }
 }
 
 async function loadMyStuff() {
@@ -445,18 +540,13 @@ async function loadMyStuff() {
     const d = await api('/api/investments/mine');
     state.positions = d.positions.map((p) => ({ caseId: p.caseId, position: p.position }));
 
-    // posicoes por case (agregado)
     const posBox = $('#my-positions');
-    const withPos = d.positions.filter((p) => p.position > 0 || p.payout > 0);
+    if (!posBox) return;
+    const withPos = d.positions.filter((p) => p.position > 0);
     if (!withPos.length) {
       posBox.innerHTML = '<div class="empty">Ainda sem posições.</div>';
     } else {
       posBox.innerHTML = withPos.map((p) => {
-        const c = state.cases.find((x) => x.id === p.caseId);
-        const isClosed = c?.status === 'closed';
-        const payoutHtml = p.payout > 0 && isClosed
-          ? `<div class="wr-payout ${p.payout > p.position ? 'win' : p.payout < p.position ? 'loss' : ''}">→ ${fmtMoney(p.payout)}</div>`
-          : (isClosed ? '<div class="wr-payout loss">→ perdeu</div>' : '<div class="wr-payout">em aberto</div>');
         return `
           <div class="wallet-row">
             <div class="wr-left">
@@ -465,34 +555,28 @@ async function loadMyStuff() {
             </div>
             <div class="wr-right">
               <div class="wr-amt">${fmtMoney(p.position)}</div>
-              ${payoutHtml}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    // extrato (todas as transacoes)
     const trBox = $('#my-transactions');
     if (!d.transactions.length) {
       trBox.innerHTML = '<div class="empty">Sem movimentações.</div>';
     } else {
       trBox.innerHTML = d.transactions.slice(0, 30).map((t) => {
-        const isWithdraw = t.amount < 0;
-        const isPayout = t.payout != null && t.amount === 0;
-        const sign = isWithdraw || isPayout ? '+' : '-';
-        const val = isPayout ? t.payout : Math.abs(t.amount);
-        const label = isPayout ? 'PAYOUT' : (isWithdraw ? 'RETIRADA' : 'INVESTIMENTO');
+        const val = Math.abs(t.amount);
         const time = new Date(t.createdAt);
         const hh = String(time.getHours()).padStart(2, '0');
         const mm = String(time.getMinutes()).padStart(2, '0');
         return `
           <div class="inv-row">
             <span class="who">
-              <span style="font-size:9px;letter-spacing:0.2em;color:var(--matrix-green-dim);">${hh}:${mm} · ${label}</span><br/>
+              <span style="font-size:9px;letter-spacing:0.2em;color:var(--matrix-green-dim);">${hh}:${mm} · INVESTIMENTO</span><br/>
               ${escapeHtml(t.caseNome)}
             </span>
-            <span class="amt" style="color:${sign === '+' ? 'var(--matrix-green)' : 'var(--matrix-red)'};">${sign}${fmtMoney(val)}</span>
+            <span class="amt" style="color:var(--matrix-red);">- ${fmtMoney(val)}</span>
           </div>
         `;
       }).join('');
@@ -502,73 +586,79 @@ async function loadMyStuff() {
   } catch {}
 }
 
-async function loadRanking() {
-  try {
-    const d = await api('/api/ranking');
-    const box = $('#rank-list');
-    if (!d.ranking.length) {
-      box.innerHTML = '<div class="empty">Sem times.</div>';
-      return;
-    }
-    box.innerHTML = d.ranking.map((t, i) => `
-      <div class="rank-row ${i === 0 ? 'top' : ''} ${t.id === state.team?.id ? 'me' : ''}">
-        <div class="rank-pos">${i + 1}</div>
-        <div class="rank-name">${escapeHtml(t.name)}</div>
-        <div class="rank-bal">${fmtMoney(t.balance)}</div>
-      </div>
-    `).join('');
-  } catch {}
-}
-
 /* ---------------- SSE ---------------- */
 function connectEvents() {
   const es = new EventSource('/api/events');
+  es.addEventListener('open', async () => {
+    await fetchGameState();
+    if (state.team) await fetchCases(true);
+    routeByGameState();
+  });
+  es.addEventListener('game-state', (e) => {
+    const d = JSON.parse(e.data);
+    state.gameState = d.state;
+    state.participantsTotal = d.participantsTotal;
+    state.participantsFinalized = d.participantsFinalized;
+    updateWaitingCounter();
+    updateRevealingCopy();
+    routeByGameState();
+  });
+  es.addEventListener('team-finalized', (e) => {
+    const d = JSON.parse(e.data);
+    state.participantsTotal = d.total;
+    state.participantsFinalized = d.finalized;
+    updateWaitingCounter();
+  });
   es.addEventListener('case-created', async (e) => {
     const c = JSON.parse(e.data);
-    toast('> novo case: ' + c.nome);
-    await refreshCases();
-  });
-  es.addEventListener('case-closed', async () => {
-    toast('> case encerrado');
-    await refreshCases({ keepCurrent: true });
-    await refreshMe();
-    await loadMyStuff();
+    if (state.team) toast('> novo case: ' + c.nome);
+    await fetchCases(false);
   });
   es.addEventListener('case-removed', async () => {
-    await refreshCases();
-    await refreshMe();
+    if (state.team) toast('> case removido');
+    await fetchCases(false);
   });
   es.addEventListener('investment', async (e) => {
     const data = JSON.parse(e.data);
-    if (data.caseId === state.currentCaseId) {
-      await refreshCases({ keepCurrent: true });
-      loadCaseFeed(data.caseId);
+    if (state.team) {
+      const isMe = data.teamId === state.team?.id;
+      if (isMe) toast('Investimento confirmado: ' + fmtMoney(data.amount));
+      else toast('@' + data.teamName + ' investiu ' + fmtMoney(data.amount));
     }
+    await fetchCases(true);
+  });
+  es.addEventListener('reveal-start', () => {
+    state.gameState = 'revealing';
+    routeByGameState();
+  });
+  es.addEventListener('reveal-result', () => {
+    state.gameState = 'revealed';
+    routeByGameState();
   });
   es.addEventListener('reset', async () => {
-    toast('> sistema resetado');
-    await refreshMe();
-    await refreshCases();
-    await loadMyStuff();
+    // reset servidor apagou minha sessao — recarrega tudo
+    toast('> rodada resetada');
+    location.reload();
   });
   es.onerror = () => {};
 }
 
 /* ---------------- BOOT ---------------- */
-async function onLogin() {
-  $('#pick-team').style.display = 'none';
-  $('#app').style.display = 'flex';
-  renderTeam();
-  await loadMyStuff();
-  await refreshCases();
-  connectEvents();
-}
+
+$('#login-btn').addEventListener('click', submitLogin);
+$('#login-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
+$('#login-area').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
 
 (async function boot() {
+  await loadAreas();
+  await fetchGameState();
   const me = await refreshMe();
-  if (me) {
-    onLogin();
-  } else {
-    loadTeams();
+
+  if (me && state.gameState === 'investing' && !state.finalizedAt) {
+    await loadMyStuff();
+    await fetchCases();
+    startClientTimer();
   }
+  routeByGameState();
+  connectEvents();
 })();

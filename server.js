@@ -13,13 +13,19 @@ const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'shark';
 const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 500000);
 
-// Times pre-cadastrados (mesmas areas do sorteio do telao)
-const DEFAULT_TEAMS = [
-  'STRATEGY',
-  'DATAHUB',
-  'FOCUS MARKET',
-  'CUSTOMER DEVELOPMENT',
+// duracao do timer individual de investimento (por jogador), em ms
+const INVEST_WINDOW_MS = 90 * 1000;
+// pequeno slack pra atrasos de rede/relogio na checagem do server
+const INVEST_SLACK_MS = 2000;
+
+// Areas fixas (mesmas do sorteio do telao)
+const AREAS_LIST = [
   'CONSUMER',
+  'CUSTOMER DEVELOPMENT',
+  'FOCUS MARKET',
+  'DATAHUB',
+  'STRATEGY',
+  'MAKE (BUSINESS OP)',
   'BUSINESS OPERATIONS (MAKE)',
 ];
 
@@ -29,12 +35,13 @@ if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
 function emptyDb() {
   return {
-    teams: [],        // [{id, name (area em maiusculo), balance, createdAt}]
+    teams: [],        // [{id, name, area, balance, createdAt, investingStartedAt, finalizedAt}]
     sessions: {},     // { sid: teamId }
     cases: [],
-    investments: [],  // [{id, teamId, caseId, amount, payout, createdAt}] — 1 registro por transacao (invest + / withdraw -)
+    investments: [],  // [{id, teamId, caseId, amount, createdAt}]
     areas: [],
     startingBalance: STARTING_BALANCE,
+    gameState: 'presenting', // presenting | investing | revealing | revealed
   };
 }
 
@@ -43,23 +50,14 @@ let db = emptyDb();
 if (existsSync(DATA_FILE)) {
   try {
     db = { ...emptyDb(), ...JSON.parse(readFileSync(DATA_FILE, 'utf8')) };
+    // garante os campos novos em times antigos
+    for (const t of db.teams) {
+      if (t.investingStartedAt === undefined) t.investingStartedAt = null;
+      if (t.finalizedAt === undefined) t.finalizedAt = null;
+    }
   } catch (e) {
     console.error('data.json corrompido, recomeçando', e);
     db = emptyDb();
-  }
-}
-
-// Garante que os times default existem
-function ensureTeams() {
-  for (const name of DEFAULT_TEAMS) {
-    if (!db.teams.find((t) => t.name === name)) {
-      db.teams.push({
-        id: newId(),
-        name,
-        balance: db.startingBalance,
-        createdAt: Date.now(),
-      });
-    }
   }
 }
 
@@ -75,7 +73,6 @@ function save() {
 const hash = (s) => createHash('sha256').update(s).digest('hex');
 const newId = () => randomBytes(8).toString('hex');
 
-ensureTeams();
 save();
 
 // ---------- SSE broadcaster ----------
@@ -93,9 +90,15 @@ function broadcast(type, payload) {
 const app = express();
 app.use(express.json({ limit: '512kb' }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
-// ---------- auth (team-based) ----------
+// ---------- auth ----------
 
 function currentTeam(req) {
   const sid = req.cookies?.sid;
@@ -119,27 +122,82 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Retorna a lista de times (usada no picker do mobile)
-app.get('/api/teams', (req, res) => {
-  const list = db.teams.map((t) => ({
-    id: t.id,
-    name: t.name,
-    balance: t.balance,
-  }));
-  res.json({ teams: list });
+// ---------- game state helpers ----------
+
+// Considera um jogador "ativo" (participando da rodada em curso)
+function isRoundParticipant(t) {
+  return !!t.investingStartedAt;
+}
+
+function participantsSummary() {
+  const participants = db.teams.filter(isRoundParticipant);
+  const finalized = participants.filter((t) => !!t.finalizedAt).length;
+  return {
+    total: participants.length,
+    finalized,
+    readyToReveal: participants.length > 0 && finalized === participants.length,
+  };
+}
+
+function currentGameState() {
+  const s = participantsSummary();
+  return {
+    state: db.gameState,
+    participantsTotal: s.total,
+    participantsFinalized: s.finalized,
+    readyToReveal: s.readyToReveal,
+  };
+}
+
+function broadcastGameState() {
+  broadcast('game-state', currentGameState());
+}
+
+app.get('/api/game-state', (req, res) => {
+  res.json(currentGameState());
 });
 
-// Entrar como um time (sem senha, pelo nome da area)
+app.get('/api/areas', (req, res) => {
+  res.json({ areas: AREAS_LIST });
+});
+
+// ---------- login (participante) ----------
+
 app.post('/api/team-login', (req, res) => {
-  const name = String(req.body?.name || '').trim().toUpperCase();
-  const team = db.teams.find((t) => t.name.toUpperCase() === name);
-  if (!team) return res.status(404).json({ error: 'time_nao_encontrado' });
+  if (db.gameState !== 'investing') {
+    return res.status(400).json({ error: 'fase_invalida' });
+  }
+  const name = String(req.body?.name || '').trim();
+  const areaRaw = String(req.body?.area || '').trim().toUpperCase();
+  if (!name) return res.status(400).json({ error: 'nome_obrigatorio' });
+  if (!areaRaw) return res.status(400).json({ error: 'area_obrigatoria' });
+  if (!AREAS_LIST.includes(areaRaw)) return res.status(400).json({ error: 'area_invalida' });
+
+  const now = Date.now();
+  const team = {
+    id: newId(),
+    name,
+    area: areaRaw,
+    balance: db.startingBalance,
+    createdAt: now,
+    investingStartedAt: now,
+    finalizedAt: null,
+  };
+  db.teams.push(team);
 
   const sid = newId() + newId();
   db.sessions[sid] = team.id;
   save();
   res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 24 * 3600 * 1000 });
-  res.json({ id: team.id, name: team.name, balance: team.balance });
+  broadcastGameState();
+  res.json({
+    id: team.id,
+    name: team.name,
+    area: team.area,
+    balance: team.balance,
+    investingStartedAt: team.investingStartedAt,
+    investWindowMs: INVEST_WINDOW_MS,
+  });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -156,21 +214,27 @@ app.get('/api/me', (req, res) => {
   const t = currentTeam(req);
   if (!t) return res.json({ team: null });
   res.json({
-    team: { id: t.id, name: t.name, balance: t.balance },
+    team: {
+      id: t.id,
+      name: t.name,
+      area: t.area,
+      balance: t.balance,
+      investingStartedAt: t.investingStartedAt,
+      finalizedAt: t.finalizedAt,
+    },
     startingBalance: db.startingBalance,
+    investWindowMs: INVEST_WINDOW_MS,
+    gameState: db.gameState,
   });
 });
 
-// ---------- helpers ----------
+// ---------- helpers de cases ----------
 
-// posicao liquida do time em um case (soma investimentos - retiradas)
 function teamPositionInCase(teamId, caseId) {
   return db.investments
     .filter((i) => i.teamId === teamId && i.caseId === caseId)
     .reduce((s, i) => s + i.amount, 0);
 }
-
-// ---------- cases ----------
 
 function publicCase(c) {
   const invs = db.investments.filter((i) => i.caseId === c.id);
@@ -197,11 +261,10 @@ function publicCase(c) {
     extras: c.extras || null,
     pos: c.pos || 0,
     status: c.status,
-    multiplier: c.multiplier ?? null,
     createdAt: c.createdAt,
     resolvedAt: c.resolvedAt ?? null,
-    totalRaised,        // soma bruta de todos os aportes (histórico)
-    netInvested: netTotal, // total liquido investido no case agora
+    totalRaised,
+    netInvested: netTotal,
     investorCount: activeInvestors,
   };
 }
@@ -222,109 +285,88 @@ app.get('/api/cases/:id', (req, res) => {
   res.json({ case: publicCase(c) });
 });
 
-// feed publico do case: mostra as posicoes liquidas por time (sem individuais)
-app.get('/api/cases/:id/feed', (req, res) => {
-  const invs = db.investments.filter((i) => i.caseId === req.params.id);
-  const byTeam = new Map();
-  for (const i of invs) {
-    const cur = byTeam.get(i.teamId) || { amount: 0, lastAt: 0 };
-    cur.amount += i.amount;
-    cur.lastAt = Math.max(cur.lastAt, i.createdAt);
-    byTeam.set(i.teamId, cur);
-  }
-  const rows = [...byTeam.entries()]
-    .filter(([, v]) => v.amount > 0)
-    .map(([teamId, v]) => {
-      const team = db.teams.find((t) => t.id === teamId);
-      return {
-        teamId,
-        teamName: team?.name || '???',
-        amount: v.amount,
-        lastAt: v.lastAt,
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
-  res.json({ positions: rows });
-});
+// ---------- investir ----------
 
-// Investir (aporte)
 app.post('/api/cases/:id/invest', requireTeam, (req, res) => {
+  if (db.gameState !== 'investing') return res.status(400).json({ error: 'rodada_fechada' });
+  const team = req.team;
+  if (team.finalizedAt) return res.status(400).json({ error: 'tempo_esgotado' });
+  if (team.investingStartedAt && (Date.now() - team.investingStartedAt) > (INVEST_WINDOW_MS + INVEST_SLACK_MS)) {
+    // auto-finaliza pra manter consistencia
+    team.finalizedAt = Date.now();
+    save();
+    broadcast('team-finalized', {
+      teamId: team.id,
+      name: team.name,
+      area: team.area,
+      ...participantsSummary(),
+    });
+    broadcastGameState();
+    return res.status(400).json({ error: 'tempo_esgotado' });
+  }
+
   const c = db.cases.find((x) => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
   if (c.status !== 'open') return res.status(400).json({ error: 'caso_fechado' });
+
   const amount = Math.floor(Number(req.body?.amount || 0));
   if (!Number.isFinite(amount) || amount <= 0) {
     return res.status(400).json({ error: 'valor_invalido' });
   }
-  if (amount > req.team.balance) {
+  if (amount > team.balance) {
     return res.status(400).json({ error: 'saldo_insuficiente' });
   }
-  req.team.balance -= amount;
+
+  team.balance -= amount;
   const inv = {
     id: newId(),
-    teamId: req.team.id,
+    teamId: team.id,
     caseId: c.id,
-    amount,           // positivo = aporte
-    payout: null,
+    amount,
     createdAt: Date.now(),
   };
   db.investments.push(inv);
   save();
   broadcast('investment', {
     caseId: c.id,
-    teamId: req.team.id,
-    teamName: req.team.name,
+    teamId: team.id,
+    teamName: team.name,
+    area: team.area,
     amount,
     action: 'invest',
   });
   res.json({
     ok: true,
-    balance: req.team.balance,
-    position: teamPositionInCase(req.team.id, c.id),
+    balance: team.balance,
+    position: teamPositionInCase(team.id, c.id),
   });
 });
 
-// Retirar (parcial ou total)
+// Retirar desativado (regra do TCC)
 app.post('/api/cases/:id/withdraw', requireTeam, (req, res) => {
-  const c = db.cases.find((x) => x.id === req.params.id);
-  if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
-  if (c.status !== 'open') return res.status(400).json({ error: 'caso_fechado' });
-  const amountRaw = req.body?.amount;
-  const isAll = amountRaw === 'all' || amountRaw === undefined;
-  const current = teamPositionInCase(req.team.id, c.id);
-  if (current <= 0) return res.status(400).json({ error: 'sem_posicao' });
-
-  const amount = isAll ? current : Math.floor(Number(amountRaw));
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return res.status(400).json({ error: 'valor_invalido' });
-  }
-  if (amount > current) return res.status(400).json({ error: 'valor_maior_que_posicao' });
-
-  req.team.balance += amount;
-  db.investments.push({
-    id: newId(),
-    teamId: req.team.id,
-    caseId: c.id,
-    amount: -amount,  // negativo = retirada
-    payout: null,
-    createdAt: Date.now(),
-  });
-  save();
-  broadcast('investment', {
-    caseId: c.id,
-    teamId: req.team.id,
-    teamName: req.team.name,
-    amount,
-    action: 'withdraw',
-  });
-  res.json({
-    ok: true,
-    balance: req.team.balance,
-    position: teamPositionInCase(req.team.id, c.id),
-  });
+  return res.status(400).json({ error: 'resgate_desativado' });
 });
 
-// Historico do meu time
+// ---------- finalize (timer do jogador acabou) ----------
+
+app.post('/api/finalize', requireTeam, (req, res) => {
+  const team = req.team;
+  if (!team.finalizedAt) {
+    team.finalizedAt = Date.now();
+    save();
+    broadcast('team-finalized', {
+      teamId: team.id,
+      name: team.name,
+      area: team.area,
+      ...participantsSummary(),
+    });
+    broadcastGameState();
+  }
+  res.json({ ok: true, finalizedAt: team.finalizedAt });
+});
+
+// ---------- meus dados ----------
+
 app.get('/api/investments/mine', requireTeam, (req, res) => {
   const invs = db.investments
     .filter((i) => i.teamId === req.team.id)
@@ -333,8 +375,7 @@ app.get('/api/investments/mine', requireTeam, (req, res) => {
       const c = db.cases.find((x) => x.id === i.caseId);
       return {
         id: i.id,
-        amount: i.amount,        // pode ser negativo (retirada)
-        payout: i.payout ?? null,
+        amount: i.amount,
         createdAt: i.createdAt,
         caseId: i.caseId,
         caseNome: c?.nome || 'Case removido',
@@ -343,12 +384,16 @@ app.get('/api/investments/mine', requireTeam, (req, res) => {
       };
     });
 
-  // agrega tambem por case (posicao liquida)
   const byCase = new Map();
   for (const inv of invs) {
-    const cur = byCase.get(inv.caseId) || { caseId: inv.caseId, caseNome: inv.caseNome, caseArea: inv.caseArea, caseStatus: inv.caseStatus, position: 0, payout: 0 };
+    const cur = byCase.get(inv.caseId) || {
+      caseId: inv.caseId,
+      caseNome: inv.caseNome,
+      caseArea: inv.caseArea,
+      caseStatus: inv.caseStatus,
+      position: 0,
+    };
     cur.position += inv.amount;
-    if (inv.payout != null) cur.payout += inv.payout;
     byCase.set(inv.caseId, cur);
   }
   const positions = [...byCase.values()];
@@ -356,14 +401,56 @@ app.get('/api/investments/mine', requireTeam, (req, res) => {
   res.json({ transactions: invs, positions });
 });
 
-app.get('/api/ranking', (req, res) => {
-  const list = db.teams
-    .map((t) => ({ id: t.id, name: t.name, balance: t.balance }))
-    .sort((a, b) => b.balance - a.balance);
-  res.json({ ranking: list });
+// ---------- ranking / resultados ----------
+
+function computeResults() {
+  const cases = [...db.cases].sort((a, b) => a.createdAt - b.createdAt);
+  const results = cases.map((c) => {
+    const invs = db.investments.filter((i) => i.caseId === c.id);
+    const totalByInvestor = invs.reduce((s, i) => s + i.amount, 0);
+
+    // agrega por area
+    const byArea = new Map(); // area -> { total, investors: Set<teamId> }
+    for (const inv of invs) {
+      const team = db.teams.find((t) => t.id === inv.teamId);
+      if (!team) continue;
+      const area = team.area || 'DESCONHECIDA';
+      const cur = byArea.get(area) || { total: 0, investors: new Set() };
+      cur.total += inv.amount;
+      cur.investors.add(inv.teamId);
+      byArea.set(area, cur);
+    }
+    const breakdown = [];
+    let totalByArea = 0;
+    for (const [area, agg] of byArea.entries()) {
+      const avg = agg.investors.size > 0 ? agg.total / agg.investors.size : 0;
+      breakdown.push({ area, average: avg, total: agg.total, investorCount: agg.investors.size });
+      totalByArea += avg;
+    }
+    breakdown.sort((a, b) => b.average - a.average);
+
+    return {
+      caseId: c.id,
+      nome: c.nome,
+      area: c.area,
+      pos: c.pos || 0,
+      totalByInvestor,
+      totalByArea,
+      breakdown,
+    };
+  });
+
+  // ranking pelo total por area media (criterio do vencedor)
+  const ranking = [...results].sort((a, b) => b.totalByArea - a.totalByArea);
+  const winner = ranking[0] && ranking[0].totalByArea > 0 ? ranking[0] : (ranking[0] || null);
+  return { results, ranking, winner };
+}
+
+app.get('/api/admin/results', requireAdmin, (req, res) => {
+  res.json(computeResults());
 });
 
-// ---------- integracao com o telao ----------
+// ---------- telao bridge ----------
 
 function telaoKey(area, nome) {
   return String(area).trim() + '::' + String(nome).trim();
@@ -377,6 +464,10 @@ app.post('/api/telao/areas', (req, res) => {
 });
 
 app.post('/api/telao/state', (req, res) => {
+  // durante revealing/revealed nao aceita cases novos (evita corrida)
+  if (db.gameState !== 'presenting' && db.gameState !== 'investing') {
+    return res.json({ ok: true, ignored: true });
+  }
   const results = Array.isArray(req.body?.results) ? req.body.results : [];
   let created = 0;
 
@@ -401,7 +492,6 @@ app.post('/api/telao/state', (req, res) => {
       extras: r.caso.extras || null,
       pos: idx + 1,
       status: 'open',
-      multiplier: null,
       createdAt: Date.now() + idx,
       resolvedAt: null,
     };
@@ -417,9 +507,15 @@ app.post('/api/telao/state', (req, res) => {
 app.post('/api/telao/reset', (req, res) => {
   db.cases = [];
   db.investments = [];
-  for (const t of db.teams) t.balance = db.startingBalance;
+  for (const t of db.teams) {
+    t.balance = db.startingBalance;
+    t.investingStartedAt = null;
+    t.finalizedAt = null;
+  }
+  db.gameState = 'presenting';
   save();
   broadcast('reset', {});
+  broadcastGameState();
   res.json({ ok: true });
 });
 
@@ -443,56 +539,11 @@ app.get('/api/admin/me', (req, res) => {
   res.json({ isAdmin: req.cookies?.admin === hash(ADMIN_PASSWORD) });
 });
 
-app.post('/api/admin/cases/:id/close', requireAdmin, (req, res) => {
-  const c = db.cases.find((x) => x.id === req.params.id);
-  if (!c) return res.status(404).json({ error: 'nao_encontrado' });
-  if (c.status !== 'open') return res.status(400).json({ error: 'ja_fechado' });
-  const multiplier = Number(req.body?.multiplier);
-  if (!Number.isFinite(multiplier) || multiplier < 0) {
-    return res.status(400).json({ error: 'multiplicador_invalido' });
-  }
-  c.status = 'closed';
-  c.multiplier = multiplier;
-  c.resolvedAt = Date.now();
-
-  // paga cada time proporcional à posicao liquida
-  const positions = new Map();
-  for (const inv of db.investments.filter((i) => i.caseId === c.id)) {
-    positions.set(inv.teamId, (positions.get(inv.teamId) || 0) + inv.amount);
-  }
-  for (const [teamId, pos] of positions.entries()) {
-    if (pos <= 0) continue;
-    const payout = Math.floor(pos * multiplier);
-    const team = db.teams.find((t) => t.id === teamId);
-    if (!team) continue;
-    team.balance += payout;
-    // marca no ultimo aporte positivo deste time como payout consolidado
-    // (mais simples: cria uma "transacao" de payout separada)
-    db.investments.push({
-      id: newId(),
-      teamId,
-      caseId: c.id,
-      amount: 0,
-      payout,
-      createdAt: Date.now() + 1,
-      isPayout: true,
-      basePosition: pos,
-    });
-  }
-
-  save();
-  const pc = publicCase(c);
-  broadcast('case-closed', pc);
-  res.json({ case: pc });
-});
-
 app.delete('/api/admin/cases/:id', requireAdmin, (req, res) => {
   const idx = db.cases.findIndex((x) => x.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'nao_encontrado' });
   const c = db.cases[idx];
-  if (c.status === 'closed') {
-    return res.status(400).json({ error: 'nao_pode_apagar_fechado' });
-  }
+
   // devolve o dinheiro dos times (posicao liquida)
   const positions = new Map();
   for (const inv of db.investments.filter((i) => i.caseId === c.id)) {
@@ -511,10 +562,29 @@ app.delete('/api/admin/cases/:id', requireAdmin, (req, res) => {
 });
 
 app.get('/api/admin/state', requireAdmin, (req, res) => {
+  const teams = db.teams.map((t) => {
+    const invested = db.investments
+      .filter((i) => i.teamId === t.id)
+      .reduce((s, i) => s + i.amount, 0);
+    return {
+      id: t.id,
+      name: t.name,
+      area: t.area,
+      balance: t.balance,
+      invested,
+      investingStartedAt: t.investingStartedAt,
+      finalizedAt: t.finalizedAt,
+      isParticipant: isRoundParticipant(t),
+    };
+  });
   res.json({
-    teams: db.teams.map((t) => ({ id: t.id, name: t.name, balance: t.balance })),
+    teams,
     cases: db.cases.map(publicCase),
+    investments: db.investments,
     startingBalance: db.startingBalance,
+    results: computeResults(),
+    gameState: currentGameState(),
+    investWindowMs: INVEST_WINDOW_MS,
   });
 });
 
@@ -526,18 +596,79 @@ app.post('/api/admin/starting-balance', requireAdmin, (req, res) => {
   res.json({ startingBalance: db.startingBalance });
 });
 
-app.post('/api/admin/reset', requireAdmin, (req, res) => {
-  const keepTeams = !!req.body?.keepTeams;
-  if (keepTeams) {
-    for (const t of db.teams) t.balance = db.startingBalance;
-    db.cases = [];
+// Mudanca de fase
+app.post('/api/admin/game-state', requireAdmin, (req, res) => {
+  const next = String(req.body?.state || '').trim();
+  const valid = ['presenting', 'investing', 'revealing', 'revealed'];
+  if (!valid.includes(next)) return res.status(400).json({ error: 'fase_invalida' });
+
+  if (next === 'investing' && db.gameState !== 'investing') {
+    // ao abrir a rodada, limpa participantes/investimentos antigos pra rodar zerado
+    // (mantém cases pra reaproveitar da apresentação)
     db.investments = [];
+    // remove sessoes antigas: forca todos a re-entrar
+    db.sessions = {};
+    db.teams = [];
+  }
+  if (next === 'presenting') {
+    // volta pra apresentacao: limpa rodada mas mantem historico se quiser
+    for (const t of db.teams) {
+      t.investingStartedAt = null;
+      t.finalizedAt = null;
+    }
+  }
+
+  db.gameState = next;
+  save();
+  broadcastGameState();
+  res.json({ ok: true, ...currentGameState() });
+});
+
+// Forcar encerramento (marca todos como finalizados)
+app.post('/api/admin/force-finalize', requireAdmin, (req, res) => {
+  const now = Date.now();
+  let n = 0;
+  for (const t of db.teams) {
+    if (isRoundParticipant(t) && !t.finalizedAt) {
+      t.finalizedAt = now;
+      n++;
+    }
+  }
+  save();
+  broadcastGameState();
+  res.json({ ok: true, finalized: n });
+});
+
+// Revelar vencedor (dispara suspense no telao)
+app.post('/api/admin/reveal', requireAdmin, (req, res) => {
+  const results = computeResults();
+  db.gameState = 'revealing';
+  save();
+  broadcastGameState();
+  broadcast('reveal-start', {});
+  // apos suspense, publica o resultado
+  setTimeout(() => {
+    db.gameState = 'revealed';
+    save();
+    broadcast('reveal-result', results);
+    broadcastGameState();
+  }, 6000);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/reset', requireAdmin, (req, res) => {
+  const keepCases = !!req.body?.keepCases;
+  if (keepCases) {
+    db.investments = [];
+    db.sessions = {};
+    db.teams = [];
+    db.gameState = 'presenting';
   } else {
     db = { ...emptyDb(), startingBalance: db.startingBalance };
-    ensureTeams();
   }
   save();
   broadcast('reset', {});
+  broadcastGameState();
   res.json({ ok: true });
 });
 
@@ -562,7 +693,32 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-// ---------- routes ----------
+// ---------- auto-finalize periodico (garante que timers vencidos fecham) ----------
+
+setInterval(() => {
+  if (db.gameState !== 'investing') return;
+  const now = Date.now();
+  let changed = false;
+  for (const t of db.teams) {
+    if (!isRoundParticipant(t) || t.finalizedAt) continue;
+    if ((now - t.investingStartedAt) > (INVEST_WINDOW_MS + INVEST_SLACK_MS)) {
+      t.finalizedAt = now;
+      changed = true;
+      broadcast('team-finalized', {
+        teamId: t.id,
+        name: t.name,
+        area: t.area,
+        ...participantsSummary(),
+      });
+    }
+  }
+  if (changed) {
+    save();
+    broadcastGameState();
+  }
+}, 2000);
+
+// ---------- rotas ----------
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));

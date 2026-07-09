@@ -1245,3 +1245,459 @@ body {
   letter-spacing: 0.25em;
   margin-bottom: 8px;
 }
+
+/* ============================================================
+   LOGIN CARD (nome + área)
+   ============================================================ */
+.login-card {
+  width: min(92vw, 460px);
+  border: 1px solid var(--matrix-green-dim);
+  background: var(--panel);
+  padding: 22px 22px 24px;
+  box-shadow: 0 0 30px rgba(0,255,65,0.15), inset 0 0 30px rgba(0,255,65,0.04);
+}
+.login-card .pick-label {
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--matrix-green-dim);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+.login-card .field {
+  margin-bottom: 12px;
+}
+.login-card .field label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.login-card .field input,
+.login-card .field select {
+  width: 100%;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--matrix-green-dark);
+  color: var(--matrix-green);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 10px 12px;
+  letter-spacing: 0.05em;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.login-card .field input:focus,
+.login-card .field select:focus {
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 12px rgba(0,255,65,0.4);
+}
+.login-card .field select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--matrix-green) 50%),
+                    linear-gradient(135deg, var(--matrix-green) 50%, transparent 50%);
+  background-position: right 14px center, right 8px center;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+.login-card .field select option {
+  background: #000;
+  color: var(--matrix-green);
+}
+.login-card .error {
+  color: var(--matrix-red);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  min-height: 1.4em;
+  margin: 4px 0 10px;
+}
+.login-card .pick-hint {
+  font-size: 11px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.1em;
+  margin-top: 14px;
+  line-height: 1.7;
+  text-align: center;
+}
+.login-card .pick-hint b {
+  color: var(--matrix-green);
+}
+
+/* ============================================================
+   TIMER DO JOGADOR (bank)
+   ============================================================ */
+#player-timer {
+  margin: 4px 0 8px;
+  border: 1px solid var(--matrix-green-dark);
+  padding: 8px 10px;
+  background: rgba(0,15,4,0.7);
+}
+#player-timer .timer-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+#player-timer .timer-line .l {
+  font-size: 10px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.25em;
+}
+#player-timer .timer-line .v {
+  font-size: 22px;
+  color: var(--matrix-green);
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(0,255,65,0.6);
+  letter-spacing: 0.08em;
+}
+.timer-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(0,40,10,0.6);
+  border: 1px solid var(--matrix-green-dark);
+  overflow: hidden;
+}
+.timer-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--matrix-green);
+  box-shadow: 0 0 10px var(--matrix-green);
+  transition: width 0.5s linear, background-color 0.3s;
+}
+.timer-bar-fill.critical {
+  background: var(--matrix-red);
+  box-shadow: 0 0 12px var(--matrix-red);
+  animation: timer-blink 0.5s steps(2) infinite;
+}
+@keyframes timer-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ============================================================
+   SHARK ASCII (bank waiting screen)
+   ============================================================ */
+.shark-ascii-block {
+  font-size: clamp(5px, 1.2vw, 9px);
+  line-height: 1.05;
+  letter-spacing: 0.05em;
+  color: var(--matrix-green);
+  text-shadow: 0 0 6px rgba(0,255,65,0.7);
+  margin: 18px auto 12px;
+  white-space: pre;
+  text-align: left;
+  max-width: 92vw;
+  overflow: hidden;
+  animation: shark-bob 4.5s ease-in-out infinite;
+}
+@keyframes shark-bob {
+  0%, 100% { transform: translateY(0) rotate(0.3deg); }
+  50%      { transform: translateY(-8px) rotate(-0.4deg); }
+}
+.phase-message {
+  text-align: center;
+  padding: 20px;
+  max-width: 92vw;
+}
+.phase-message .w-status {
+  margin-bottom: 8px;
+}
+.phase-message .w-blink {
+  color: var(--matrix-green);
+  font-size: clamp(18px, 5vw, 26px);
+  letter-spacing: 0.25em;
+  text-shadow: 0 0 12px var(--matrix-green);
+  margin-bottom: 12px;
+  animation: blink 1.4s steps(2) infinite;
+}
+.phase-message .w-hint {
+  color: var(--matrix-green-dim);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  line-height: 1.8;
+}
+@keyframes blink { 50% { opacity: 0.55; } }
+
+/* ============================================================
+   ADMIN — FASE DO JOGO
+   ============================================================ */
+.phase-indicator {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--matrix-green-dark);
+  background: rgba(0,15,4,0.55);
+  margin-bottom: 14px;
+}
+.phase-current-label {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--matrix-green-dim);
+}
+.phase-current {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  color: var(--matrix-green);
+  text-shadow: 0 0 10px var(--matrix-green);
+}
+.phase-current.phase-investing { color: var(--matrix-amber); text-shadow: 0 0 10px var(--matrix-amber); }
+.phase-current.phase-revealing { color: var(--matrix-red); text-shadow: 0 0 10px var(--matrix-red); }
+.phase-current.phase-revealed  { color: var(--matrix-green); text-shadow: 0 0 15px var(--matrix-green); }
+.phase-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.phase-buttons .btn.small { flex: 1 1 auto; min-width: 220px; }
+.phase-hint {
+  font-size: 12px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+  padding-top: 6px;
+}
+.btn.win {
+  border-color: var(--matrix-amber);
+  color: var(--matrix-amber);
+  box-shadow: 0 0 14px rgba(255,191,0,0.25);
+}
+.btn.win:hover:not(:disabled) {
+  background: rgba(255,191,0,0.12);
+  box-shadow: 0 0 25px rgba(255,191,0,0.55);
+}
+.btn.win:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.btn.pulse {
+  animation: btn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,191,0,0.35); }
+  50%      { box-shadow: 0 0 35px rgba(255,191,0,0.85); }
+}
+
+/* ============================================================
+   ADMIN — QR CODE
+   ============================================================ */
+.qr-hint {
+  font-size: 11px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.qr-container {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: center;
+}
+.qr-code-wrap {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 25px rgba(0,255,65,0.3);
+}
+.qr-code-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.qr-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qr-url-label {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+}
+.qr-url {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--matrix-green);
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  border: 1px dashed var(--matrix-green-dim);
+  background: rgba(0,15,4,0.6);
+  text-shadow: 0 0 8px rgba(0,255,65,0.4);
+  word-break: break-all;
+}
+.qr-counter {
+  padding: 12px;
+  background: rgba(0,20,5,0.75);
+  border: 1px solid var(--matrix-green-dark);
+  text-align: center;
+}
+.qr-counter-num {
+  font-size: 28px;
+  color: var(--matrix-green);
+  font-weight: bold;
+  text-shadow: 0 0 10px var(--matrix-green);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+.qr-counter-label {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.qr-fallback {
+  padding: 18px;
+  color: #000;
+  background: #fff;
+  border-radius: 8px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  word-break: break-all;
+}
+@media (max-width: 720px) {
+  .qr-container { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   ADMIN — RANKING TABLE
+   ============================================================ */
+.ranking-hint {
+  font-size: 11px;
+  color: var(--matrix-green-dim);
+  letter-spacing: 0.05em;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.ranking-hint b { color: var(--matrix-green); }
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ranking-table thead th {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--matrix-green-dim);
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--matrix-green-dark);
+  text-transform: uppercase;
+}
+.ranking-table thead th.right { text-align: right; }
+.ranking-table tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px dashed var(--matrix-green-dark);
+  vertical-align: top;
+  color: var(--text);
+}
+.ranking-table tbody td.right { text-align: right; }
+.ranking-table tbody td.money {
+  font-variant-numeric: tabular-nums;
+  color: var(--matrix-green);
+  letter-spacing: 0.02em;
+}
+.ranking-table tbody td.money.strong {
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(0,255,65,0.4);
+  font-size: 14px;
+}
+.ranking-table tr.top td { background: rgba(0,50,15,0.35); }
+.ranking-table tr.winner-row td {
+  background: rgba(255,191,0,0.12);
+  color: #fff;
+}
+.ranking-table tr.winner-row td.money { color: var(--matrix-amber); text-shadow: 0 0 10px var(--matrix-amber); }
+.rank-pos-cell {
+  font-weight: bold;
+  font-size: 16px;
+  color: var(--matrix-green);
+  text-shadow: 0 0 8px rgba(0,255,65,0.5);
+}
+.ranking-nome {
+  font-weight: bold;
+  color: var(--matrix-green);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.ranking-breakdown {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.area-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--matrix-green-dark);
+  background: rgba(0,15,4,0.6);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  border-radius: 2px;
+}
+.area-chip b { color: var(--matrix-green); }
+.area-chip .dim { color: var(--matrix-green-dim); font-size: 9px; }
+.winner-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: var(--matrix-amber);
+  color: #000;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  font-weight: bold;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   ADMIN — PARTICIPANTES
+   ============================================================ */
+.area-stats {
+  padding: 10px 12px;
+  border: 1px dashed var(--matrix-green-dark);
+  background: rgba(0,15,4,0.5);
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.area-stats b { color: var(--matrix-green); margin-right: 8px; }
+.status-pill {
+  padding: 6px 12px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  font-weight: bold;
+  border-radius: 2px;
+  text-transform: uppercase;
+  align-self: center;
+}
+.status-pill.investing {
+  background: rgba(0,255,65,0.2);
+  color: var(--matrix-green);
+  border: 1px solid var(--matrix-green);
+  animation: blink 1.4s steps(2) infinite;
+}
+.status-pill.finalized {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-dim);
+  border: 1px solid var(--matrix-green-dark);
+}
+.rank-row .info .dim { color: var(--matrix-green-dim); font-size: 11px; }
+

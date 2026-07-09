@@ -303,6 +303,7 @@
     justify-content: center;
     text-align: center;
     position: relative;
+    padding-top: 10vh;
   }
   #stage-round {
     position: absolute;
@@ -512,8 +513,8 @@
     box-shadow: 0 0 22px rgba(0, 255, 65, 0.08),
                 inset 0 0 40px rgba(0, 255, 65, 0.04);
     color: rgba(255,255,255,0.92);
-    font-size: clamp(0.82rem, 1.15vw, 1rem);
-    line-height: 1.55;
+    font-size: clamp(0.75rem, 0.95vw, 0.95rem);
+    line-height: 1.45;
   }
   .w-box.left-box { grid-column: 1; grid-row: 1 / 3; }
   .w-box.right-top { grid-column: 2; grid-row: 1; }
@@ -521,7 +522,7 @@
   .w-box-title {
     color: var(--matrix-green);
     font-weight: bold;
-    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    font-size: clamp(0.9rem, 1.25vw, 1.15rem);
     letter-spacing: 0.14em;
     margin-bottom: 1.4vh;
     text-shadow: 0 0 12px var(--matrix-green), 0 0 30px rgba(0,255,65,0.4);
@@ -530,7 +531,7 @@
   .w-box-sub-title {
     color: var(--matrix-green);
     font-weight: bold;
-    font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+    font-size: clamp(0.8rem, 1.15vw, 1.05rem);
     margin-top: 2.4vh;
     margin-bottom: 0.5vh;
     text-shadow: 0 0 8px var(--matrix-green);
@@ -567,6 +568,70 @@
     .w-box.left-box { grid-column: 1; grid-row: 1; }
     .w-box.right-top { grid-column: 1; grid-row: 2; }
     .w-box.right-bot { grid-column: 1; grid-row: 3; }
+  }
+
+  /* ============ TIMER BAR ============ */
+  #case-timer-bar-wrapper {
+    width: 100%;
+    max-width: 1400px;
+    margin: 1vh 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+  }
+  .timer-bar-controls {
+    display: flex;
+    align-items: center;
+    gap: 1vw;
+  }
+  .timer-display-text {
+    margin-left: auto;
+    font-size: clamp(2.4rem, 4vw, 3.5rem);
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 15px var(--matrix-green);
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-display-text.overtime {
+    color: var(--matrix-red);
+    text-shadow: 0 0 12px var(--matrix-red);
+  }
+  .timer-btn {
+    background: transparent;
+    border: 1px solid var(--matrix-green-dark);
+    color: var(--matrix-green-dim);
+    font-family: inherit;
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    letter-spacing: 0.1em;
+    padding: 0.5vh 1vw;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .timer-btn:hover {
+    color: var(--matrix-green);
+    border-color: var(--matrix-green);
+    box-shadow: 0 0 12px rgba(0,255,65,0.3);
+  }
+  .timer-bar-container {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 40, 10, 0.6);
+    border: 1px solid var(--matrix-green-dark);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .timer-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--matrix-green);
+    box-shadow: 0 0 12px var(--matrix-green);
+    transition: width 1s linear, background-color 0.3s;
+  }
+  .timer-bar-fill.overtime {
+    background: var(--matrix-red);
+    box-shadow: 0 0 12px var(--matrix-red);
   }
 
   /* ============ BOTÃO "VER MAIS" + MODAL ============ */
@@ -661,7 +726,7 @@
   .extra-showcase .label {
     color: var(--matrix-green);
     font-weight: bold;
-    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    font-size: clamp(0.9rem, 1.3vw, 1.15rem);
     letter-spacing: 0.15em;
     text-shadow: 0 0 12px var(--matrix-green), 0 0 30px rgba(0,255,65,0.4);
     text-transform: none;
@@ -670,7 +735,7 @@
   .extra-frame {
     position: relative;
     width: 100%;
-    aspect-ratio: 9 / 10;
+    aspect-ratio: 1.4;
     background: rgba(0,20,5,0.85);
     box-shadow: 0 0 30px rgba(0,255,65,0.25),
                 inset 0 0 40px rgba(0,255,65,0.06);
@@ -742,8 +807,7 @@
   #winner-next {
     position: absolute;
     bottom: 3.5vh;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 3vw;
     background: transparent;
     border: 1px solid var(--matrix-green-dark);
     color: var(--matrix-green-dim);
@@ -801,6 +865,214 @@
     font-size: clamp(1.4rem, 3vw, 2.6rem);
     letter-spacing: 0.3em;
     text-shadow: 0 0 15px var(--matrix-green);
+  }
+
+  /* ============ TELA QR (rodada de investimento) ============ */
+  #screen-qr {
+    flex-direction: column;
+    padding: 4vh 4vw;
+    gap: 3vh;
+  }
+  .qr-title {
+    font-size: clamp(2rem, 8vw, 6rem) !important;
+  }
+  .qr-mega {
+    display: grid;
+    grid-template-columns: minmax(320px, 45vh) 1fr;
+    gap: 4vw;
+    align-items: center;
+    max-width: 1400px;
+    width: 100%;
+    margin-top: 2vh;
+  }
+  .qr-mega-code {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0,255,65,0.5), 0 0 100px rgba(0,255,65,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-mega-code img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .qr-mega-side {
+    color: var(--matrix-green);
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+  }
+  .qr-mega-label {
+    font-size: clamp(0.85rem, 1.3vw, 1.2rem);
+    letter-spacing: 0.3em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+  }
+  .qr-mega-url {
+    font-family: inherit;
+    font-size: clamp(1rem, 2.2vw, 2rem);
+    letter-spacing: 0.06em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 12px var(--matrix-green);
+    word-break: break-all;
+    padding: 1.5vh 1.5vw;
+    border: 1px dashed var(--matrix-green-dim);
+    background: rgba(0,20,5,0.5);
+  }
+  .qr-mega-instructions {
+    font-size: clamp(0.9rem, 1.4vw, 1.3rem);
+    line-height: 1.9;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.05em;
+  }
+  .qr-mega-instructions b {
+    color: var(--matrix-green);
+    text-shadow: 0 0 8px var(--matrix-green);
+  }
+  .qr-mega-counter {
+    background: rgba(0,40,10,0.7);
+    border: 1px solid var(--matrix-green-dark);
+    padding: 2vh 2vw;
+    text-align: center;
+  }
+  .qr-mega-count-num {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 15px var(--matrix-green);
+    font-variant-numeric: tabular-nums;
+  }
+  .qr-mega-count-label {
+    font-size: clamp(0.75rem, 1vw, 0.95rem);
+    letter-spacing: 0.3em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    margin-top: 0.5vh;
+  }
+  @media (max-width: 980px) {
+    .qr-mega {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ============ TELA REVELAÇÃO ============ */
+  #screen-reveal {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    padding: 4vh 4vw;
+  }
+  #reveal-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3vh;
+  }
+  .reveal-kicker {
+    font-size: clamp(0.9rem, 1.5vw, 1.3rem);
+    letter-spacing: 0.4em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(0,255,65,0.4);
+  }
+  .reveal-title {
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--matrix-green);
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 20px var(--matrix-green), 0 0 60px rgba(0,255,65,0.6);
+    font-family: inherit;
+    animation: reveal-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes reveal-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; text-shadow: 0 0 30px var(--matrix-green), 0 0 90px rgba(0,255,65,0.9); }
+  }
+  #reveal-winner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5vh;
+    max-width: 1400px;
+    width: 100%;
+  }
+  #reveal-name {
+    font-family: inherit;
+    font-size: clamp(2.4rem, 5.5vw, 5rem);
+    line-height: 1.15;
+    color: var(--matrix-green);
+    text-shadow: 0 0 25px var(--matrix-green), 0 0 90px rgba(0,255,65,0.6);
+    letter-spacing: 0.02em;
+    font-weight: bold;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-align: center;
+    padding: 0 2vw;
+  }
+  #reveal-area {
+    font-size: clamp(1rem, 2vw, 1.6rem);
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0,255,65,0.4);
+  }
+  #reveal-totals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3vw;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 3vh;
+  }
+  .reveal-total-card {
+    background: rgba(0,25,8,0.75);
+    border: 1px solid var(--matrix-green-dim);
+    padding: 3vh 2vw;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(0,255,65,0.15), inset 0 0 40px rgba(0,255,65,0.05);
+  }
+  .reveal-total-card.win {
+    background: rgba(0,60,20,0.75);
+    border: 2px solid var(--matrix-green);
+    box-shadow: 0 0 50px rgba(0,255,65,0.5), inset 0 0 60px rgba(0,255,65,0.1);
+  }
+  .reveal-total-label {
+    font-size: clamp(0.8rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.35em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    margin-bottom: 1.5vh;
+  }
+  .reveal-total-card.win .reveal-total-label {
+    color: var(--matrix-green);
+    text-shadow: 0 0 10px var(--matrix-green);
+  }
+  .reveal-total-value {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: bold;
+    color: var(--matrix-green);
+    text-shadow: 0 0 20px var(--matrix-green);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+  .reveal-total-card.win .reveal-total-value {
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    text-shadow: 0 0 30px var(--matrix-green), 0 0 90px rgba(0,255,65,0.6);
+  }
+  .reveal-total-sub {
+    font-size: clamp(0.7rem, 1.05vw, 0.9rem);
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.6);
+    margin-top: 1.5vh;
+    line-height: 1.5;
+  }
+  @media (max-width: 980px) {
+    #reveal-totals { grid-template-columns: 1fr; }
   }
 
   /* ============ TELAS ESTREITAS (preview / notebook) ============ */
@@ -891,6 +1163,19 @@
     <div id="winner-author"></div>
   </div>
 
+  <!-- ===================== BARRA DE PROGRESSO (TIMER) ===================== -->
+  <div id="case-timer-bar-wrapper" style="display:none;">
+    <div class="timer-bar-controls">
+      <button class="timer-btn" id="btn-timer-play">▶ PLAY</button>
+      <button class="timer-btn" id="btn-timer-5m">5 MIN</button>
+      <button class="timer-btn" id="btn-timer-3m">3 MIN</button>
+      <div class="timer-display-text" id="case-timer">05:00</div>
+    </div>
+    <div class="timer-bar-container">
+      <div class="timer-bar-fill" id="timer-bar-fill"></div>
+    </div>
+  </div>
+
   <div id="winner-grid">
     <div class="w-box left-box">
       <div class="w-box-title">DESAFIO</div>
@@ -945,6 +1230,59 @@
   <button class="ghost-btn" id="reset-btn" style="margin-top:3vh">&gt; reiniciar simulação_</button>
 </div>
 
+<!-- ===================== TELA 4: QR (rodada de investimento) ===================== -->
+<div class="screen" id="screen-qr">
+  <h1 class="glitch qr-title" data-text="INVISTAM">INVISTAM</h1>
+  <div class="tagline">// escaneie o QR pra entrar no banco<span class="cursor">&nbsp;</span></div>
+
+  <div class="qr-mega">
+    <div class="qr-mega-code">
+      <img id="qr-mega-img" src="" alt="QR" />
+    </div>
+    <div class="qr-mega-side">
+      <div class="qr-mega-label">OU ACESSE:</div>
+      <div class="qr-mega-url" id="qr-mega-url">—</div>
+      <div class="qr-mega-instructions">
+        <div>1. abra o navegador do celular</div>
+        <div>2. entre com seu nome + área</div>
+        <div>3. você tem <b>01:30</b> e <b>$500.000</b></div>
+        <div>4. invista no case que você acredita</div>
+      </div>
+      <div class="qr-mega-counter">
+        <div class="qr-mega-count-num" id="qr-mega-counter">0 / 0</div>
+        <div class="qr-mega-count-label">investidores finalizaram</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TELA 5: REVELAÇÃO ===================== -->
+<div class="screen" id="screen-reveal">
+  <div id="reveal-intro">
+    <div class="reveal-kicker">// AURA DO TANQUE PROCESSANDO</div>
+    <div class="reveal-title" id="reveal-title-decoding">CALCULANDO VENCEDOR_</div>
+  </div>
+
+  <div id="reveal-winner" style="display:none">
+    <div class="reveal-kicker">// VENCEDOR DA RODADA</div>
+    <h1 id="reveal-name"></h1>
+    <div id="reveal-area"></div>
+
+    <div id="reveal-totals">
+      <div class="reveal-total-card">
+        <div class="reveal-total-label">TOTAL POR INVESTIDOR</div>
+        <div class="reveal-total-value" id="reveal-total-investor">$ 0</div>
+        <div class="reveal-total-sub">soma bruta de todos os aportes</div>
+      </div>
+      <div class="reveal-total-card win">
+        <div class="reveal-total-label">TOTAL POR ÁREA (MÉDIA)</div>
+        <div class="reveal-total-value" id="reveal-total-area">$ 0</div>
+        <div class="reveal-total-sub" id="reveal-total-breakdown">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <button class="ghost-btn" id="reset-corner">&gt; reset_</button>
 
 <script>
@@ -965,81 +1303,246 @@
    ===================================================================== */
 const AREAS = [
   {
-    nome: "STRATEGY",
+    nome: "CONSUMER",
     cases: [
       {
-        nome: "AURA (AI Unified Reporting Agent)",
-        autor: "Luciano Barbosa",
+        nome: "AI Anvisa Monitor",
+        autor: "Marianna Della Mea",
         duracao: "5 minutos",
-        desafio:
-          "Com a reestruturação da companhia no ano passado, a governança mudou e hoje a gestão é feita por portfólio. Nosso time atua nesse pilar trazendo agilidade, transparência, priorização e apoio à tomada de decisão das lideranças. Porém, a baixa confiabilidade e a falta de dados completos dos dados dos projetos limita a qualidade das análises e compromete a tomada de decisão estratégica das lideranças.",
-        stakeholder: "Claudia Meira / CDIO BPC Latam",
-        solucao:
-          "AURA é um agente de IA que consolida e analisa dados, qualifica a governança, responde dúvidas estratégicas e entrega relatórios executivos diretamente às lideranças, trazendo agilidade e transparência nas decisões e tudo com base nos dados dos projetos.",
-        tools: [
-          { name: "Microsoft Copilot Studio", highlight: true },
-          "Azure DevOps",
-          "Power BI",
-          "Teams",
-          "Power Automate",
-        ],
+        desafio: "O monitoramento de registros de cosméticos na ANVISA é manual, fragmentado e reativo, limitando a capacidade de identificar movimentos de inovação da concorrência com antecedência e consumindo tempo relevante do time regulatório de R&D.",
+        stakeholder: "Assuntos Regulatórios / R&D (requested by Thais H)",
+        solucao: "Automatizamos o monitoramento dos registros da ANVISA usando Databricks e estruturamos os dados com GenAI, transformando aprovações regulatórias em sinais precoces de inovação e movimentos da concorrência.",
+        tools: ["Databricks", "GenAI"],
         impacto: [
-          { label: "Produtividade", value: "+20 a 24h/mês" },
-          { label: "Escalabilidade", value: "Tax Reform" },
+          { label: "Antecipação estratégica", value: "+6 meses de vantagem para orientar portfólio, claims e priorização de inovação." },
+          { label: "Eficiência operacional", value: "~120 horas/mês liberadas do time de Regulatory de P&D ao eliminar buscas manuais" }
         ],
-        timeToValue: "6 meses",
-        // showcases — aparecem no modal "> ver mais_"
-        // Se tiver screenshots reais, coloque em sorteio-matrix/assets/ e
-        // referencie via img: "assets/aura-copilot.png"
-        extras: [
-          { label: "Copilot Studio", img: "assets/aura-copilot.png" },
-          { label: "Teams",          img: "assets/aura-teams.png" },
-          { label: "CDIO Report",    img: "assets/aura-cdio-report.png" },
-        ],
+        timeToValue: "2 Weeks"
       },
-    ],
-  },
-  {
-    nome: "DATAHUB",
-    cases: [
-      { nome: "Case Datahub 01" },
-    ],
-  },
-  {
-    nome: "FOCUS MARKET",
-    cases: [
-      { nome: "Case Focus Market 01" },
-    ],
+      {
+        nome: "Nielsen IQ Share Agent",
+        autor: "Alexandre Soares",
+        duracao: "5 minutos",
+        desafio: "A geração de insights de market share (Nielsen/NIQ) é manual, demorada e dependente de cálculos complexos, consumindo até 5 dias por mês por analista. Isso limita escala, atrasa decisões e mantém talentos seniores presos em tarefas operacionais (data wrangling em vez de recomendação estratégica).",
+        stakeholder: "CMI (Juliana Bastos and Stephanie Decaillet)",
+        solucao: "Implementamos um agente de IA (Copilot) que automatiza a análise de dados Nielsen ponta a ponta a partir de um simples comando (ex: “full analysis of Seda”):<br>• Processa 12 meses de histórico (Brasil + canais)<br>• Converte dados em uma narrativa clara (ganho/perda, onde e por quê)<br>• Decompõe drivers (promo vs. non-promo, preço, mix, distribuição, delist etc.)<br>• Aplica regras de negócio embarcadas, garantindo consistência metodológica",
+        tools: [{ name: "Copilot", highlight: true }],
+        impacto: [
+          { label: "Produtividade", value: "~80–85% redução de tempo (de 1 semana → ~1 dia)" },
+          { label: "Qualidade de decisão", value: "foco em “por quê” (não só “o quê”), com menor risco metodológico" },
+          { label: "Escala e padronização", value: "framework reutilizável entre marcas e categorias" },
+          { label: "Eficiência operacional", value: "16–20 horas/mês liberadas por analista" }
+        ],
+        timeToValue: "2 Weeks"
+      },
+      {
+        nome: "dCom Pricing Monitor",
+        autor: "Pedro Teixeira",
+        duracao: "5 minutos",
+        desafio: "Monitorar preços de concorrentes no ecommerce (pure players e farma) de forma contínua é intensivo em esforço manual, pouco ágil e limita a capacidade de reação rápida para manter competitividade, especialmente em períodos críticos como o plano de inverno de skincare.",
+        stakeholder: "Marcos Alves",
+        solucao: "Desenvolvimento de um agente automatizado (via Phyton/Databricks) para capturar preços da concorrência e estruturar o monitoramento ao longo de 3 meses, permitindo visibilidade contínua e acionamento rápido de ajustes de pricing",
+        tools: ["Python", "Databricks"],
+        impacto: [
+          { label: "Competitividade", value: "resposta mais rápida a movimentos de preço da concorrência no ecommerce" },
+          { label: "Eficiência operacional", value: "eliminação do esforço manual diário de coleta de preços (35 produtos em 5+ retailers)" },
+          { label: "Impacto financeiro", value: "saving de ~33.5k em 3 meses" }
+        ],
+        timeToValue: "2 Weeks"
+      }
+    ]
   },
   {
     nome: "CUSTOMER DEVELOPMENT",
     cases: [
-      { nome: "Case Customer Development 01" },
-    ],
+      {
+        nome: "ROLLOUT GLOBAL NRM COPILOT AGENT",
+        autor: "Italo Santos & Vinicius Santos",
+        duracao: "5 minutos",
+        desafio: "NRM analysis depending on descriptive dashboards (PBI based) or ad hoc analysis done in EXCEL, hence, insights generation can be time consuming.<br><br>The AGENT supports the NRM analyst to focus the analysis, create and validate hypothesis, and structure the story telling around opportunities identified",
+        stakeholder: "Pedro Antunes (BW) | Jade N (PC)",
+        solucao: "COPILOT Agent specialized in NRM analysis based on NIELSEN data.<br><br>Nielsen Data Sets | Prompt Engineering | Instruction Files",
+        tools: [{ name: "Copilot", highlight: true }, "Power BI", "Excel"],
+        impacto: [
+          { value: "30% time reduction on insights Generation for NRM processes in BW (Treatment) and PC (Deodorants)*<br><i>(*) testing phase</i>" }
+        ],
+        timeToValue: "8 Weeks"
+      },
+      {
+        nome: "DATA QUALITY CHECKER – EDDGIE STORE PANEL",
+        autor: "Italo Santos & Vinicius Santos",
+        duracao: "5 minutos",
+        desafio: "STORE PANEL data set is consumed by multiple technology components in EDDGIE (PICOS, CRM, TRAX, etc).<br><br>Quality issues in STORE PANEL leads to incorrect KPI calculation, sales incentives evaluation and other operational issues.<br><br>Monthly checking the data quality is time consuming",
+        stakeholder: "CD HUB Back Office",
+        solucao: "COPILOT Agent specialized in checking the data quality of EDDGIE STORE PANEL.<br><br>Excel Data Sets | Validation Rules Inventory | Prompt Engineering",
+        tools: [{ name: "Copilot", highlight: true }, "Excel"],
+        impacto: [
+          { value: "90% time reduction on data quality checks" }
+        ],
+        timeToValue: "8 Weeks"
+      }
+    ]
   },
   {
-    nome: "CONSUMER",
+    nome: "FOCUS MARKET",
     cases: [
-      { nome: "Case Consumer 01" },
-    ],
+      {
+        nome: "Time Bucket Hub Itupeva",
+        autor: "Ana Cardoso",
+        duracao: "5 minutos",
+        desafio: "Atualmente não há mecanismos de verificação se os times de programação estão seguindo a capacidade acordada para o HUB. Logo, ao consolidar o DOC de cargas é comum que haja inconsistências onde há mais carros programados do que a capacidade planejada.<br><br><b>Oportunidade:</b> Evitar que os times de programação de carga extrapolem a capacidade acordada por dia/hora no HUB Itupeva.",
+        stakeholder: "Operação HUB Itupeva – Diego Soaress",
+        solucao: "<b>Solução:</b> Agente Agendador de Cargas – Agente que impede que os times de programação agendem cargas excedendo a capacidade do HUB.<br><b>Tool:</b> Copilot Studio (POC)",
+        tools: [{ name: "Copilot Studio", highlight: true }],
+        impacto: [
+          { label: "Melhora nos indicadores", value: "Diminuição do TAT" },
+          { value: "Zero estadia" },
+          { value: "Diminuição de custos com motoristas" }
+        ],
+        timeToValue: "2 semanas"
+      },
+      {
+        nome: "IA Community",
+        autor: "Thaiz Cabral",
+        duracao: "5 minutos",
+        desafio: "Atualmente, embora ferramentas de Inteligência Artificial estejam disponíveis para grande parte dos colaboradores, a adoção ainda é desigual entre áreas e níveis de conhecimento.<br><br>Muitos colaboradores, especialmente em operações, logística e Supply Chain, ainda não conhecem aplicações práticas de IA para suas atividades do dia a dia, o que limita a captura de ganhos de produtividade e inovação.",
+        stakeholder: "IA COMMUNITY - João Nascimento",
+        solucao: "<b>Solução:</b> Aplicação de Treinamentos e atividades para engajar o time de C.O no uso das ferramentas de IA e criação de uma comunidade para discussão e trabalho em casos de negocios.<br><b>Tool:</b> Copilot Web e 365.",
+        tools: ["Copilot Web", "Copilot 365"],
+        impacto: [
+          { value: "Tranformação digital em C.O;" },
+          { value: "Aumento de Licenças;" },
+          { value: "Aumento de Prompts gerados;" },
+          { value: "Automação de Tarefas visando aumento de produtividade." }
+        ],
+        timeToValue: "Contínuo"
+      },
+      {
+        nome: "Performance Insights Scorecard",
+        autor: "Thaiz Cabral",
+        duracao: "5 minutos",
+        desafio: "Atualmente temos um scorecard de performace para C.O, com análises majoritariamente descritivas, gerando dificuldade em identificar correlações, tendências e alavancas de impacto, além do tempo elevado para geração de insights e baixa padronização na leitura dos dados entre áreas. O desafio é ultilizar IA para gerar um scorecard inteligente, automatico e que traga sugestões de atuação.",
+        stakeholder: "Performance Insights Scorecard - Gabriela Coelho",
+        solucao: "<b>Solução:</b> Uso do \"Analyst\" para explorar o \"score card\" de forma avançada, identificando padrões, correlações e tendências automaticamente. Construção de análises orientadas a dados para responder perguntas-chave (ex: o que mais impacta o resultado? onde atuar?). Geração de visualizações e explicações que aceleram a interpretação e suportam tomada de decisão.",
+        tools: [{ name: "Analyst", highlight: true }],
+        impacto: [
+          { value: "Identificação de variáveis com os KPIs principais;" },
+          { value: "Priorização baseada em drivers reais de performance;" },
+          { value: "Redução do tempo para geração de insights (de horas/dias para minutos);" },
+          { value: "Melhor qualidade na tomada de decisão." }
+        ],
+        timeToValue: "Imediato (insights já nas primeiras análises)"
+      }
+    ]
   },
   {
-    nome: "BUSINESS OPERATIONS (MAKE)",
+    nome: "DATAHUB",
     cases: [
-      { nome: "Case Business Operations 01" },
-    ],
+      {
+        nome: "AI at scale: transformando sell-out em ação semanal",
+        autor: "Bruna Angelini",
+        duracao: "5 minutos",
+        desafio: "O report semanal de sell-out, compartilhado com toda a liderança de PC, exigia análise manual de um material extenso e fragmentado, tornando lenta a geração de insights claros e acionáveis para o negócio.",
+        stakeholder: "Times de PC, Liderança (VPs, Diretores), Trade e Analytics",
+        solucao: "Utilizamos o Copilot para transformar automaticamente o report em insights estruturados, resumos executivos e comparações semana a semana, garantindo consistência e velocidade na comunicação.",
+        tools: [{ name: "Copilot", highlight: true }],
+        impacto: [
+          { value: "Reduzimos significativamente o tempo de análise, aceleramos o envio para a liderança e aumentamos a velocidade e qualidade da tomada de decisão, com maior foco nos principais drivers e mudanças relevantes." }
+        ],
+        timeToValue: "Implementação rápida, com ganhos percebidos já na primeira semana."
+      },
+      {
+        nome: "IA na gestão de risco da campanha FIFA",
+        autor: "Jéssica Caldato",
+        duracao: "5 minutos",
+        desafio: "Para a campanha FIFA 2026 de Rexona e Dove, precisávamos definir quais EANs participariam da ação promocional considerando diferentes níveis de estoque em cada cliente. A decisão precisava equilibrar dois riscos: baixa disponibilidade do produto promocional em clientes com necessidade de reposição ou excesso de estoque dos produtos regulares que pudesse comprometer a execução da campanha.",
+        stakeholder: "CSP PC – Categoria Deos",
+        solucao: "Redução do tempo de análise e maior agilidade na definição do portfólio promocional, minimizando riscos de ruptura e excesso de estoque.",
+        tools: [{ name: "Copilot", highlight: true }],
+        impacto: [
+          { value: "O uso do Copilot reduziu significativamente o tempo dedicado aos cruzamentos e análises manuais, permitindo maior velocidade." }
+        ],
+        timeToValue: "Imediato, com aplicação direta no planejamento e execução da campanha FIFA 2026."
+      },
+      {
+        nome: "IA como copiloto técnico: acelerando análises, desenvolvimento e tomada de decisão",
+        autor: "Jéssica Caldato",
+        duracao: "5 minutos",
+        desafio: "A área de Analytics lida diariamente com desafios técnicos e analíticos, desde desenvolvimento de códigos em Databricks e Power BI até análises avançadas para suportar decisões de negócio. Muitas dessas atividades demandam tempo para pesquisa, desenvolvimento e validação.",
+        stakeholder: "DataHub",
+        solucao: "Utilizamos Copilot e Gemini para acelerar análises, apoiar o desenvolvimento de códigos e validar dados. As ferramentas ajudam o time a ganhar velocidade, aumentar a robustez dos processos e resolver desafios técnicos do dia a dia.",
+        tools: [{ name: "Copilot", highlight: true }, "Gemini", "Databricks", "Power BI"],
+        impacto: [
+          { value: "Mais agilidade na execução das atividades, processos mais robustos e maior produtividade do time técnico, permitindo foco nas análises e recomendações de maior valor para o negócio." }
+        ],
+        timeToValue: "Imediato, com aplicação contínua nas atividades diárias do time."
+      },
+      {
+        nome: "Projeções de Mercado",
+        autor: "Beatriz Amaral",
+        duracao: "5 minutos",
+        desafio: "Acertar com o menor erro possível a projeção de vendas dos produtos Unilever para que a fábrica seja capaz de produzir o necessário ou realocar esforços.<br><br>Prever como o mercado está e o que impacta esse número para que o time estratégico possa atuar de forma rápida e minimizar impacto.",
+        stakeholder: "Time de negócio – CSP Performance",
+        solucao: "Projeção de vendas utilizando Séries Temporais que inclui variáveis exógenas. Esse algoritmo complexo foi feito em Linguagem R.",
+        tools: ["R"],
+        impacto: [
+          { value: "Processo mais eficiente alinhado com o financeiro, além de decisões mais assertivas e rápidas, visando a economia de custos e otimização de margem." }
+        ],
+        timeToValue: "6 meses e constante evolução"
+      }
+    ]
   },
+  {
+    nome: "STRATEGY",
+    cases: [
+      {
+        nome: "AURA (AI Unified Reporting Agent)",
+        autor: "Nicolas Kuhnast",
+        duracao: "5 minutos",
+        desafio: "Hoje, a informação de portfólio está dispersa entre Teams, SharePoint, e-mails e documentos. Gerando perda de tempo, retrabalho, decisões lentas e forte dependência das lideranças para responder perguntas que deveriam ser resolvidas em segundos.<br><br>Nossos times investem tempo buscando dados, respondendo dúvidas repetitivas e construindo reportes manualmente, enquanto o negócio e nossos stakeholders exigem AGILIDADE, FOCO e EFICIÊNCIA na entrega de informação estratégica.",
+        stakeholder: "Claudia Meira / CDIO BPC Latam",
+        solucao: "AURA é o agente inteligente desenvolvido para se tornar o ponto único de interação entre as pessoas e as informações da organização. Inclusive traz relatórios automatizados com todas as informações do portfolio e por área.<br><br><b>Tools:</b> Microsoft Copilot Studio, Azure DevOps, Power BI, Teams, Power Automate",
+        tools: [],
+        impacto: [
+          { label: "Produtividade", value: "+20 a 24h/mês" },
+          { label: "Escalabilidade", value: "Tax Reform" },
+          { label: "Especialização", value: "IA especializada em Portfolio Management, conectando governança, relatórios e tomada de decisão em uma única experiência." }
+        ],
+        timeToValue: "6 meses",
+        extras: [
+          { label: "Copilot Studio", img: "assets/aura-copilot.png" },
+          { label: "Teams",          img: "assets/aura-teams.png" },
+          { label: "CDIO Report",    img: "assets/aura-cdio-report.png" }
+        ]
+      }
+    ]
+  },
+  {
+    nome: "MAKE (BUSINESS OP)",
+    cases: [
+      {
+        nome: "Automação Operacional (Aguardando case oficial)",
+        autor: "Time MAKE",
+        duracao: "5 minutos",
+        desafio: "Atualmente, o processo de gestão da operação de negócio carece de automação rápida, exigindo alto esforço manual e repetitivo na conferência de dados logísticos e operacionais.",
+        stakeholder: "Liderança MAKE",
+        solucao: "Implementação de um agente IA integrado para reconciliação automática de processos e apontamento de gargalos em tempo real nas esteiras de produção.",
+        tools: [{ name: "Copilot", highlight: true }, "Power Automate", "Power BI"],
+        impacto: [
+          { value: "Redução do esforço operacional em mais de 40%;" },
+          { value: "Previsibilidade e maior agilidade na detecção de anomalias operacionais." }
+        ],
+        timeToValue: "Em desenvolvimento"
+      }
+    ]
+  }
 ];
 /* ===================================================================== */
 
 const GLYPHS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789Z$#%&+*=<>";
 // aleatoriedade criptográfica (crypto.getRandomValues) — imprevisível de verdade
 function rand(n) {
-  if (window.crypto && crypto.getRandomValues) {
-    const buf = new Uint32Array(1);
-    crypto.getRandomValues(buf);
-    return buf[0] % n;
-  }
+  // Usa Math.random que possui uma distribuição mais "espalhada" perceptivelmente para UI
   return Math.floor(Math.random() * n);
 }
 const glyph = () => GLYPHS[rand(GLYPHS.length)];
@@ -1531,6 +2034,8 @@ const screens = {
   draw: document.getElementById("screen-draw"),
   winner: document.getElementById("screen-winner"),
   final: document.getElementById("screen-final"),
+  qr: document.getElementById("screen-qr"),
+  reveal: document.getElementById("screen-reveal"),
 };
 const winnerKicker = document.getElementById("winner-kicker");
 const winnerName = document.getElementById("winner-name");
@@ -1551,6 +2056,17 @@ const extrasAuthor = document.getElementById("extras-author");
 const extrasGrid = document.getElementById("extras-grid");
 const extrasClose = document.getElementById("extras-close");
 let currentExtrasContext = null;
+
+const timerContainer = document.getElementById("case-timer-bar-wrapper");
+const timerDisplay = document.getElementById("case-timer");
+const timerBarFill = document.getElementById("timer-bar-fill");
+const btnTimerPlay = document.getElementById("btn-timer-play");
+const btnTimer5m = document.getElementById("btn-timer-5m");
+const btnTimer3m = document.getElementById("btn-timer-3m");
+let timerTotalSeconds = 300;
+let timerSeconds = 300;
+let timerRunning = false;
+
 const slotsEl = document.getElementById("slots");
 const stageRound = document.getElementById("stage-round");
 const stageLabel = document.getElementById("stage-label");
@@ -1655,7 +2171,7 @@ let busy = false;
 function setupRound() {
   renderSlots();
   const pos = state.results.length + 1;
-  stageRound.textContent = "// rodada " + String(pos).padStart(2, "0") + " de " + String(AREAS.length).padStart(2, "0");
+  stageRound.textContent = "// rodada " + String(pos).padStart(2, "0") + " de 06";
 
   if (state.results.length >= AREAS.length) { showFinal(); return; }
 
@@ -1784,9 +2300,10 @@ function renderTools(tools) {
 
 function renderImpacto(impacto) {
   if (!impacto || !impacto.length) return "";
-  return impacto.map((i) =>
-    '<div class="w-impacto-line"><b>' + i.label + ':</b> ' + i.value + "</div>"
-  ).join("");
+  return impacto.map((i) => {
+    if (!i.label) return '<div class="w-impacto-line">• ' + i.value + "</div>";
+    return '<div class="w-impacto-line">• <b>' + i.label + ':</b> ' + i.value + "</div>";
+  }).join("");
 }
 
 function fadeInDetails() {
@@ -1805,13 +2322,14 @@ function fadeInDetails() {
 function clearDetails() {
   winnerKicker.textContent = "";
   winnerAuthor.textContent = "";
-  wDesafio.textContent = "";
+  wDesafio.innerHTML = "";
   wStakeholder.textContent = "";
-  wSolucao.textContent = "";
-  wTools.innerHTML = "";
+  wSolucao.innerHTML = "";
   wImpacto.innerHTML = "";
   wTimeToValue.textContent = "";
   winnerDetailEls.forEach((el) => { if (el) el.style.opacity = "0"; });
+  if (timerContainer) timerContainer.style.display = "none";
+  timerRunning = false;
 }
 
 function openExtras() {
@@ -1858,10 +2376,12 @@ function openExtras() {
 
   extrasModal.classList.add("show");
   sfxRedPill();
+  document.querySelector('.extras-header').after(timerContainer);
 }
 function closeExtras() {
   extrasModal.classList.remove("show");
   sfxKey();
+  document.querySelector('.winner-header').after(timerContainer);
 }
 winnerMoreBtn.onclick = openExtras;
 extrasClose.onclick = closeExtras;
@@ -1869,19 +2389,70 @@ extrasModal.addEventListener("click", (e) => {
   if (e.target === extrasModal) closeExtras();
 });
 
+/* ---------------- TIMER DO CASE ---------------- */
+function updateTimerDisplay() {
+  const absSecs = Math.abs(timerSeconds);
+  const m = String(Math.floor(absSecs / 60)).padStart(2, '0');
+  const s = String(absSecs % 60).padStart(2, '0');
+  const sign = timerSeconds < 0 ? "-" : "";
+  timerDisplay.textContent = sign + m + ":" + s;
+  
+  const passed = timerTotalSeconds - timerSeconds;
+  let pct = (passed / timerTotalSeconds) * 100;
+  if (pct < 0) pct = 0;
+  if (pct > 100) pct = 100;
+  if (timerBarFill) timerBarFill.style.width = pct + "%";
+
+  if (timerSeconds < 0) {
+    timerDisplay.classList.add("overtime");
+    if (timerBarFill) timerBarFill.classList.add("overtime");
+  } else {
+    timerDisplay.classList.remove("overtime");
+    if (timerBarFill) timerBarFill.classList.remove("overtime");
+  }
+}
+
+function setTimer(minutes) {
+  timerTotalSeconds = minutes * 60;
+  timerSeconds = minutes * 60;
+  timerRunning = false;
+  btnTimerPlay.textContent = "▶ PLAY";
+  updateTimerDisplay();
+}
+
+function toggleTimer() {
+  timerRunning = !timerRunning;
+  btnTimerPlay.textContent = timerRunning ? "⏸ PAUSE" : "▶ PLAY";
+  if (timerRunning) sfxKey();
+}
+
+btnTimer5m.onclick = () => { sfxKey(); setTimer(5); };
+btnTimer3m.onclick = () => { sfxKey(); setTimer(3); };
+btnTimerPlay.onclick = toggleTimer;
+
+setInterval(() => {
+  if (timerRunning) {
+    timerSeconds--;
+    updateTimerDisplay();
+  }
+}, 1000);
+
 function showWinner(areaName, caseObj, pos) {
   showScreen("winner");
   clearDetails();
+
+  document.querySelector('.winner-header').after(timerContainer);
+  setTimer(5);
+  timerContainer.style.display = "flex";
 
   // Kicker: "USE CASE 01  |  ÁREA"
   winnerKicker.innerHTML =
     "USE CASE " + String(pos).padStart(2, "0") +
     '<span class="sep">|</span>' + areaName;
 
-  // botão "ver mais_" aparece somente se o case tiver extras
-  const hasExtras = Array.isArray(caseObj.extras) && caseObj.extras.length > 0;
-  winnerMoreBtn.style.display = hasExtras ? "" : "none";
-  currentExtrasContext = hasExtras ? { area: areaName, caseObj, pos } : null;
+  // botão "ver mais_" aparece para TODOS os cases
+  winnerMoreBtn.style.display = "";
+  currentExtrasContext = { area: areaName, caseObj, pos };
 
   winnerName.textContent = "";
   winnerName.style.opacity = "1";
@@ -1898,10 +2469,9 @@ function showWinner(areaName, caseObj, pos) {
     winnerAuthor.textContent =
       autor && dur ? autor + "  |  " + dur : autor || dur;
 
-    wDesafio.textContent = caseObj.desafio || "";
+    wDesafio.innerHTML = caseObj.desafio || "";
     wStakeholder.textContent = caseObj.stakeholder || "";
-    wSolucao.textContent = caseObj.solucao || "";
-    wTools.innerHTML = renderTools(caseObj.tools);
+    wSolucao.innerHTML = caseObj.solucao || "";
     wImpacto.innerHTML = renderImpacto(caseObj.impacto);
     wTimeToValue.textContent = caseObj.timeToValue
       ? "Time-to-value: " + caseObj.timeToValue
@@ -1995,10 +2565,9 @@ if (state.results.length >= AREAS.length) {
 }
 
 /* =============================================================
-   INTEGRAÇÃO COM APP DO BANCO (mobile)
-   Manda o estado do sorteio pro server periodicamente pra que
-   o app dos jogadores no celular receba os cases revelados.
-   Não muda nada da experiência do telão.
+   INTEGRAÇÃO COM APP DO BANCO (mobile) + FASES DO JOGO
+   Manda o estado do sorteio pro server e escuta as fases:
+   presenting → investing (QR) → revealing → revealed
    ============================================================= */
 (function bridge() {
   const post = (path, body) =>
@@ -2008,12 +2577,15 @@ if (state.results.length >= AREAS.length) {
       body: JSON.stringify(body || {}),
     }).catch(() => {});
 
+  const getJson = (path) =>
+    fetch(path + "?t=" + Date.now())
+      .then((r) => r.json())
+      .catch(() => null);
+
   // Sync inicial das áreas + cases (o backend cacheia o catalogo completo)
   post("/api/telao/areas", { areas: AREAS });
 
-  // Heartbeat com o estado atual do sorteio (a cada 3s).
-  // Assim, sempre que um novo case for revelado no telão, o
-  // backend cria o case aberto pra investir no app do banco.
+  // Heartbeat com o estado atual do sorteio (a cada 1.5s).
   let lastSig = "";
   setInterval(() => {
     const sig = JSON.stringify(state.results.map((r) => r.caso.nome)) + "|" + (state.pendingArea || "");
@@ -2024,6 +2596,168 @@ if (state.results.length >= AREAS.length) {
       pendingArea: state.pendingArea,
     });
   }, 1500);
+
+  /* ---------------- fases: QR + revelação ---------------- */
+  const qrMegaImg = document.getElementById("qr-mega-img");
+  const qrMegaUrl = document.getElementById("qr-mega-url");
+  const qrMegaCounter = document.getElementById("qr-mega-counter");
+  const revealIntro = document.getElementById("reveal-intro");
+  const revealWinner = document.getElementById("reveal-winner");
+  const revealName = document.getElementById("reveal-name");
+  const revealArea = document.getElementById("reveal-area");
+  const revealTotalInvestor = document.getElementById("reveal-total-investor");
+  const revealTotalArea = document.getElementById("reveal-total-area");
+  const revealTotalBreakdown = document.getElementById("reveal-total-breakdown");
+
+  let currentBackendState = "presenting";
+  let riserStopper = null;
+
+  function fmtMoneyBR(n) {
+    return "$ " + Math.round(Number(n || 0)).toLocaleString("pt-BR");
+  }
+
+  function enterQrScreen(gs) {
+    if (screens.qr && !screens.qr.classList.contains("active")) {
+      showScreen("qr");
+      const url = window.location.origin + "/";
+      qrMegaUrl.textContent = url;
+      qrMegaImg.src = "https://quickchart.io/qr?text=" + encodeURIComponent(url) + "&size=600&margin=1";
+      sfxRedPill();
+    }
+    if (qrMegaCounter) {
+      qrMegaCounter.textContent = (gs.participantsFinalized || 0) + " / " + (gs.participantsTotal || 0);
+    }
+  }
+
+  function enterRevealScreen() {
+    showScreen("reveal");
+    revealIntro.style.display = "";
+    revealWinner.style.display = "none";
+    revealName.textContent = "";
+    revealArea.textContent = "";
+    revealTotalInvestor.textContent = "$ 0";
+    revealTotalArea.textContent = "$ 0";
+    revealTotalBreakdown.textContent = "—";
+
+    // suspense: riser + tubarão atacando + heartbeat
+    if (riserStopper) riserStopper();
+    riserStopper = sfxRiser(6);
+    sharkAttackEl.textContent = sharkFrame();
+    attackEl.classList.add("show");
+    setTimeout(() => sfxHeartbeat(), 1000);
+    setTimeout(() => sfxHeartbeat(), 2200);
+    setTimeout(() => sfxSharkAttack(), 3600);
+  }
+
+  function playRevealResult(payload) {
+    // tira o tubarão de ataque
+    attackEl.classList.remove("show");
+    if (riserStopper) { riserStopper(); riserStopper = null; }
+
+    revealIntro.style.display = "none";
+    revealWinner.style.display = "flex";
+
+    const winner = payload && payload.winner;
+    if (!winner) {
+      revealName.textContent = "SEM VENCEDOR";
+      revealArea.textContent = "nenhum investimento registrado";
+      return;
+    }
+
+    // nome do vencedor via scramble
+    revealName.textContent = "";
+    scrambleReveal(revealName, winner.nome, 3200, () => {
+      sfxVictory();
+      revealArea.textContent = "USE CASE " + String(winner.pos || 0).padStart(2, "0") + "  |  " + winner.area;
+
+      // depois anima os totais em cascata
+      setTimeout(() => {
+        revealTotalInvestor.textContent = fmtMoneyBR(winner.totalByInvestor);
+        sfxSlam();
+      }, 400);
+      setTimeout(() => {
+        revealTotalArea.textContent = fmtMoneyBR(winner.totalByArea);
+        sfxSlam();
+      }, 1200);
+      setTimeout(() => {
+        const bd = (winner.breakdown || []).map((b) =>
+          b.area + " (média): " + fmtMoneyBR(b.average)
+        ).join(" · ");
+        revealTotalBreakdown.textContent = bd || "—";
+      }, 1800);
+    });
+  }
+
+  function handleGameState(gs) {
+    if (!gs) return;
+    currentBackendState = gs.state;
+    if (gs.state === "investing") {
+      // Só entra na tela de QR se o telão já terminou a apresentação.
+      // Se ainda está no meio do sorteio, deixa o usuário terminar visualmente
+      // — mas o admin normalmente só abre a rodada quando chegou na tela final.
+      if (screens.qr && !screens.qr.classList.contains("active")) {
+        // Se estiver em intro/draw ainda, força a transição pra QR
+        enterQrScreen(gs);
+      } else {
+        // já tá na tela QR, só atualiza counter
+        if (qrMegaCounter) {
+          qrMegaCounter.textContent = (gs.participantsFinalized || 0) + " / " + (gs.participantsTotal || 0);
+        }
+      }
+    } else if (gs.state === "revealing") {
+      if (!screens.reveal.classList.contains("active")) {
+        enterRevealScreen();
+      }
+    } else if (gs.state === "revealed") {
+      // se estava em revealing, o payload reveal-result já mostrou o vencedor
+      // se o telão foi aberto DEPOIS de revealed, mostra winner direto
+      if (!screens.reveal.classList.contains("active")) {
+        showScreen("reveal");
+        revealIntro.style.display = "none";
+        revealWinner.style.display = "flex";
+        // busca os resultados via API pra popular
+        getJson("/api/game-state").then(() => {
+          // resultados só vão pelo admin. Aqui deixa placeholder informativo.
+          revealName.textContent = "VENCEDOR REVELADO";
+          revealArea.textContent = "veja o painel do admin pro ranking completo";
+        });
+      }
+    } else if (gs.state === "presenting") {
+      // volta pra intro se estava em QR/reveal
+      if (screens.qr.classList.contains("active") || screens.reveal.classList.contains("active")) {
+        showScreen("intro");
+      }
+    }
+  }
+
+  const es = new EventSource("/api/events");
+  es.addEventListener("reset", () => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+  es.addEventListener("game-state", (e) => {
+    try { handleGameState(JSON.parse(e.data)); } catch (err) {}
+  });
+  es.addEventListener("team-finalized", (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (qrMegaCounter) qrMegaCounter.textContent = (d.finalized || 0) + " / " + (d.total || 0);
+    } catch (err) {}
+  });
+  es.addEventListener("reveal-start", () => {
+    enterRevealScreen();
+  });
+  es.addEventListener("reveal-result", (e) => {
+    try { playRevealResult(JSON.parse(e.data)); } catch (err) {}
+  });
+
+  // ao carregar, pega estado corrente pra saber onde o telão deve estar
+  getJson("/api/game-state").then((gs) => {
+    if (!gs) return;
+    if (gs.state === "investing" || gs.state === "revealing" || gs.state === "revealed") {
+      handleGameState(gs);
+    }
+  });
 })();
 </script>
 </body>

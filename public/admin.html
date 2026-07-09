@@ -29,30 +29,69 @@
   <main id="admin-panel" class="admin-wrap" style="display:none">
     <h1 class="admin-title">// SHARK TANK / CONTROL</h1>
 
+    <!-- FASE DO JOGO -->
     <div class="admin-panel">
-      <h3>Cases (vindos do telão)</h3>
-      <p style="font-size:11px;color:var(--matrix-green-dim);letter-spacing:0.1em;margin-bottom:12px;">
-        Cada case é criado automaticamente quando aparece no sorteio do telão.
-        Aqui você fecha com um <b style="color:var(--matrix-green);">multiplicador de retorno</b>
-        (ex: 2 = dobra, 0.5 = metade, 0 = perde tudo, 3+ = jackpot).
+      <h3>Fase do Jogo</h3>
+      <div class="phase-indicator">
+        <span class="phase-current-label">FASE ATUAL:</span>
+        <span class="phase-current" id="phase-current">—</span>
+      </div>
+      <div class="phase-buttons">
+        <button id="btn-start-investing" class="btn small">&gt; INICIAR RODADA DE INVESTIMENTO</button>
+        <button id="btn-force-finalize" class="btn small ghost">&gt; FORÇAR ENCERRAMENTO</button>
+        <button id="btn-reveal" class="btn small win">&gt; REVELAR VENCEDOR NO TELÃO</button>
+        <button id="btn-back-presenting" class="btn small ghost">&gt; VOLTAR PARA APRESENTAÇÃO</button>
+      </div>
+      <div class="phase-hint" id="phase-hint">Escolha o modo de operação.</div>
+    </div>
+
+    <!-- QR CODE (só na fase investing) -->
+    <div class="admin-panel" id="qr-panel" style="display:none">
+      <h3>QR Code — Rodada de Investimento</h3>
+      <p class="qr-hint">
+        Peça pra galera escanear com o celular pra entrar no app e investir.
       </p>
-      <div id="cases-list">
+      <div class="qr-container">
+        <div class="qr-code-wrap">
+          <img id="qr-code" src="" alt="QR Code" />
+        </div>
+        <div class="qr-side">
+          <div class="qr-url-label">OU ACESSE PELO NAVEGADOR:</div>
+          <div class="qr-url" id="qr-url">—</div>
+          <div class="qr-counter">
+            <div class="qr-counter-num" id="qr-counter">0 / 0</div>
+            <div class="qr-counter-label">investidores finalizaram</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="admin-panel">
+      <h3>Ranking dos Cases</h3>
+      <p class="ranking-hint">
+        <b>Total (Investidor):</b> soma bruta de todos os aportes no case.<br/>
+        <b>Total (Área média):</b> média por área × soma das áreas — critério do vencedor.
+      </p>
+      <div id="ranking-table">
         <div class="empty">Ainda nenhum case revelado.</div>
       </div>
     </div>
 
+    <!-- PARTICIPANTES -->
     <div class="admin-panel">
-      <h3>Times</h3>
+      <h3>Investidores</h3>
       <div id="users-list">
         <div class="empty">Carregando...</div>
       </div>
     </div>
 
+    <!-- CONFIG -->
     <div class="admin-panel">
       <h3>Configuração</h3>
       <div class="grid-2" style="margin-bottom:12px;">
         <div class="field" style="margin:0;">
-          <label>Saldo inicial de cada time</label>
+          <label>Saldo inicial de cada investidor</label>
           <input id="starting-balance" type="number" min="0" />
         </div>
         <div style="align-self:end;">
@@ -60,7 +99,7 @@
         </div>
       </div>
       <div class="grid-2">
-        <button id="reset-keep" class="btn small ghost">&gt; reset cases (mantem times)</button>
+        <button id="reset-keep-cases" class="btn small ghost">&gt; reset investidores (mantem cases)</button>
         <button id="reset-all" class="btn small danger">&gt; RESET TOTAL</button>
       </div>
       <hr style="border:none;border-top:1px dashed var(--matrix-green-dark);margin:14px 0;" />
@@ -77,6 +116,6 @@
   <div id="toast-host"></div>
 
   <script src="/js/rain.js"></script>
-  <script src="/js/admin.js"></script>
+  <script src="/js/admin.js?v=3"></script>
 </body>
 </html>
