@@ -370,12 +370,15 @@ function renderCaseView() {
       <span class="v">${fmtMoney(pos)}</span>
     </div>` : '';
 
-  const canInvest = isOpen && !state.finalizedAt && timerRemainingMs() > 0;
+  const isOwnArea = isMyOwnArea(c);
+  const canInvest = isOpen && !isOwnArea && !state.finalizedAt && timerRemainingMs() > 0;
+  let blockLabel = 'ENCERRADO';
+  if (isOpen) blockLabel = isOwnArea ? '⊘ CASE DA SUA ÁREA — BLOQUEADO' : 'TEMPO ESGOTADO';
   const actionRow = canInvest ? `
     <div class="action-row" style="grid-template-columns: 1fr;">
       <button class="btn" id="btn-invest">&gt; INVESTIR</button>
     </div>
-  ` : '<div class="action-row"><div class="btn ghost disabled">' + (isOpen ? 'TEMPO ESGOTADO' : 'ENCERRADO') + '</div></div>';
+  ` : '<div class="action-row"><div class="btn ghost disabled">' + blockLabel + '</div></div>';
 
   view.innerHTML = `
     <div class="panel">
@@ -386,17 +389,6 @@ function renderCaseView() {
       <div class="case-nome">${escapeHtml(c.nome)}</div>
       ${c.autor || c.duracao ? `<div class="case-autor">${escapeHtml(c.autor + (c.duracao ? ' · ' + c.duracao : ''))}</div>` : ''}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-        <div style="border:1px solid var(--matrix-green-dark);padding:8px 10px;background:rgba(0,8,2,0.7);">
-          <div style="font-size:9px;letter-spacing:0.25em;color:var(--matrix-green-dim);text-transform:uppercase;">Total no case</div>
-          <div style="font-size:15px;color:var(--matrix-green);font-variant-numeric:tabular-nums;margin-top:2px;">${fmtMoney(c.netInvested || 0)}</div>
-        </div>
-        <div style="border:1px solid var(--matrix-green-dark);padding:8px 10px;background:rgba(0,8,2,0.7);">
-          <div style="font-size:9px;letter-spacing:0.25em;color:var(--matrix-green-dim);text-transform:uppercase;">Apoiadores</div>
-          <div style="font-size:15px;color:var(--matrix-green);font-variant-numeric:tabular-nums;margin-top:2px;">${c.investorCount || 0}</div>
-        </div>
-      </div>
-
       ${positionBadge}
       ${actionRow}
     </div>
@@ -406,6 +398,12 @@ function renderCaseView() {
     const btn = $('#btn-invest');
     if (btn) btn.addEventListener('click', () => openPix('invest', c));
   }
+}
+
+// A pessoa não pode investir no case da própria área (regra do jogo)
+function isMyOwnArea(c) {
+  if (!state.team || !state.team.area || !c.area) return false;
+  return String(c.area).trim().toUpperCase() === String(state.team.area).trim().toUpperCase();
 }
 
 /* ---------------- PIX MODAL ---------------- */
@@ -425,6 +423,10 @@ const pixConfirm = $('#pix-confirm');
 function openPix(mode, c) {
   if (state.finalizedAt || timerRemainingMs() <= 0) {
     toast('Tempo esgotado', 'error');
+    return;
+  }
+  if (isMyOwnArea(c)) {
+    toast('Você não pode investir no case da sua própria área', 'error');
     return;
   }
   pixMode = mode;
@@ -499,6 +501,7 @@ pixConfirm.addEventListener('click', async () => {
       valor_invalido: 'Valor inválido',
       rodada_fechada: 'Rodada fechada',
       tempo_esgotado: 'Seu tempo acabou',
+      area_propria: 'Você não pode investir no case da sua própria área',
     };
     toast(map[e.data?.error] || 'Erro na transação', 'error');
     if (e.data?.error === 'tempo_esgotado') {
@@ -653,13 +656,8 @@ function connectEvents() {
     if (state.team) toast('> case removido');
     await fetchCases(false);
   });
-  es.addEventListener('investment', async (e) => {
-    const data = JSON.parse(e.data);
-    if (state.team) {
-      const isMe = data.teamId === state.team?.id;
-      if (isMe) toast('Investimento confirmado: ' + fmtMoney(data.amount));
-      else toast('@' + data.teamName + ' investiu ' + fmtMoney(data.amount));
-    }
+  // sem toast de investimento: ninguém vê quanto os outros estão investindo
+  es.addEventListener('investment', async () => {
     await fetchCases(true);
   });
   es.addEventListener('reveal-start', () => {

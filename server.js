@@ -18,7 +18,7 @@ const INVEST_WINDOW_MS = 90 * 1000;
 // pequeno slack pra atrasos de rede/relogio na checagem do server
 const INVEST_SLACK_MS = 2000;
 
-// Areas fixas (mesmas do sorteio do telao + OUTROS pra quem nao esta em nenhuma)
+// Areas fixas (mesmas do oraculo do telao + OUTROS pra quem nao esta em nenhuma)
 const AREAS_LIST = [
   'CONSUMER',
   'CUSTOMER DEVELOPMENT',
@@ -26,15 +26,15 @@ const AREAS_LIST = [
   'DATAHUB',
   'STRATEGY',
   'MAKE (BUSINESS OP)',
-  'BUSINESS OPERATIONS (MAKE)',
   'OUTROS',
 ];
 
-// Diretores: nome + area + multiplicador do saldo
+// Agentes: nome + area + multiplicador do saldo.
+// A area AGENTES nao bate com nenhum case, entao agentes podem investir em todos.
 const DIRECTORS = {
-  claudia: { name: 'CLAUDIA MEIRA', area: 'DIRETORIA',      balanceMult: 2 },
-  felipe:  { name: 'FELIPE RESCK',  area: 'DIRETORIA',      balanceMult: 2 },
-  ia:      { name: 'IA',            area: 'DIRETORIA (AI)', balanceMult: 2 },
+  claudia: { name: 'AGENTE CLAUDIA MEIRA', area: 'AGENTES', balanceMult: 2 },
+  felipe:  { name: 'AGENTE FELIPE RESCK',  area: 'AGENTES', balanceMult: 2 },
+  ia:      { name: 'AGENTE IA',            area: 'AGENTES', balanceMult: 2 },
 };
 
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
@@ -228,8 +228,8 @@ app.post('/api/team-login', (req, res) => {
   });
 });
 
-// Login de diretor — sem input, só o codename da URL. Cria um team com nome
-// pré-definido, área DIRETORIA, saldo 2x.
+// Login de agente — sem input, só o codename da URL. Cria um team com nome
+// pré-definido, área AGENTES, saldo 2x.
 app.post('/api/director-login', (req, res) => {
   if (db.gameState !== 'investing') {
     return res.status(400).json({ error: 'fase_invalida' });
@@ -384,6 +384,13 @@ app.post('/api/cases/:id/invest', requireTeam, (req, res) => {
   if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
   if (c.status !== 'open') return res.status(400).json({ error: 'caso_fechado' });
 
+  // Ninguem pode investir no case da propria area (agentes tem area AGENTES,
+  // que nao bate com nenhum case, entao investem em todos)
+  if (team.area && c.area &&
+      String(team.area).trim().toUpperCase() === String(c.area).trim().toUpperCase()) {
+    return res.status(400).json({ error: 'area_propria' });
+  }
+
   const amount = Math.floor(Number(req.body?.amount || 0));
   if (!Number.isFinite(amount) || amount <= 0) {
     return res.status(400).json({ error: 'valor_invalido' });
@@ -483,6 +490,7 @@ function computeResults() {
   const results = cases.map((c) => {
     const invs = db.investments.filter((i) => i.caseId === c.id);
     const totalByInvestor = invs.reduce((s, i) => s + i.amount, 0);
+    const investorCount = new Set(invs.map((i) => i.teamId)).size;
 
     // agrega por area
     const byArea = new Map(); // area -> { total, investors: Set<teamId> }
@@ -510,6 +518,7 @@ function computeResults() {
       area: c.area,
       pos: c.pos || 0,
       totalByInvestor,
+      investorCount,
       totalByArea,
       breakdown,
     };
@@ -712,7 +721,9 @@ app.post('/api/admin/force-finalize', requireAdmin, (req, res) => {
   res.json({ ok: true, finalized: n });
 });
 
-// Revelar vencedor (dispara suspense no telao)
+// Revelar vencedor (dispara suspense longo no telao — o telao "enrola" com
+// mensagens de processamento enquanto isso)
+const REVEAL_SUSPENSE_MS = 14000;
 app.post('/api/admin/reveal', requireAdmin, (req, res) => {
   const results = computeResults();
   db.gameState = 'revealing';
@@ -725,7 +736,7 @@ app.post('/api/admin/reveal', requireAdmin, (req, res) => {
     save();
     broadcast('reveal-result', results);
     broadcastGameState();
-  }, 6000);
+  }, REVEAL_SUSPENSE_MS);
   res.json({ ok: true });
 });
 
@@ -811,7 +822,7 @@ app.get(['/claudia', '/felipe', '/ia'], (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Shark Tank Bank rodando na porta ${PORT}`);
+  console.log(`Shanktrix Bank rodando na porta ${PORT}`);
   console.log(`  App:   /`);
   console.log(`  Telao: /telao`);
   console.log(`  Admin: /admin`);

@@ -109,7 +109,7 @@ function renderPhase(gs) {
     if (gs.readyToReveal) hint.textContent = '✓ TODOS FINALIZARAM. Você pode revelar o vencedor agora.';
     else hint.textContent = `Rodada aberta. ${gs.participantsFinalized} de ${gs.participantsTotal} finalizaram.`;
   } else if (state === 'revealing') {
-    hint.textContent = 'O telão está fazendo a revelação. Aguarde ~6s.';
+    hint.textContent = 'O telão está fazendo a revelação com suspense. Aguarde ~15s.';
   } else if (state === 'revealed') {
     hint.textContent = 'Vencedor revelado no telão. Pra nova rodada, volte para apresentação ou reset.';
   }
@@ -132,7 +132,7 @@ $('#btn-force-finalize').addEventListener('click', async () => {
 });
 
 $('#btn-reveal').addEventListener('click', async () => {
-  if (!confirm('Revelar vencedor no telão? A sequência de suspense levará ~6 segundos.')) return;
+  if (!confirm('Revelar vencedor no telão? A sequência de suspense levará ~15 segundos.')) return;
   try {
     await api('/api/admin/reveal', { method: 'POST' });
     toast('> revelação em andamento');
@@ -189,8 +189,8 @@ function renderRanking(results) {
           <th>#</th>
           <th>Case</th>
           <th>Área</th>
-          <th class="right">Total (Investidor)</th>
-          <th class="right">Total (Área média)</th>
+          <th class="right">Investidores</th>
+          <th class="right">Total (média por área)</th>
         </tr>
       </thead>
       <tbody>
@@ -207,7 +207,7 @@ function renderRanking(results) {
           <div class="ranking-breakdown">${renderBreakdown(r.breakdown)}</div>
         </td>
         <td>${escapeHtml(r.area || '—')}</td>
-        <td class="right money">${fmtMoney(r.totalByInvestor)}</td>
+        <td class="right money">${r.investorCount || 0}</td>
         <td class="right money strong">${fmtMoneyRound(r.totalByArea)}</td>
       </tr>
     `;

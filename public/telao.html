@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SHARK TANK IA — Sorteio Matrix</title>
+<title>SHANKTRIX — Oráculo Matrix</title>
 <style>
   :root {
     --matrix-green: #00ff41;
@@ -11,6 +11,7 @@
     --matrix-green-dark: #003b00;
     --matrix-red: #ff2244;
     --matrix-blue: #2266ff;
+    --matrix-amber: #ffbf00;
     --bg: #000000;
   }
 
@@ -593,6 +594,10 @@
     text-shadow: 0 0 15px var(--matrix-green);
     font-variant-numeric: tabular-nums;
   }
+  .timer-display-text.warning {
+    color: var(--matrix-amber);
+    text-shadow: 0 0 14px var(--matrix-amber);
+  }
   .timer-display-text.overtime {
     color: var(--matrix-red);
     text-shadow: 0 0 12px var(--matrix-red);
@@ -628,6 +633,10 @@
     background: var(--matrix-green);
     box-shadow: 0 0 12px var(--matrix-green);
     transition: width 1s linear, background-color 0.3s;
+  }
+  .timer-bar-fill.warning {
+    background: var(--matrix-amber);
+    box-shadow: 0 0 12px var(--matrix-amber);
   }
   .timer-bar-fill.overtime {
     background: var(--matrix-red);
@@ -1161,6 +1170,59 @@
   @media (max-width: 980px) {
     #reveal-totals { grid-template-columns: 1fr; }
   }
+  #reveal-others {
+    width: 100%;
+    max-width: 1100px;
+    margin-top: 3.5vh;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8vh;
+  }
+  .reveal-others-title {
+    font-size: clamp(0.75rem, 1.1vw, 0.95rem);
+    letter-spacing: 0.35em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    text-align: left;
+    padding-bottom: 0.6vh;
+    border-bottom: 1px solid var(--matrix-green-dark);
+  }
+  .reveal-other-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5vw;
+    padding: 1vh 1.5vw;
+    border: 1px solid var(--matrix-green-dark);
+    background: rgba(0, 15, 4, 0.6);
+    font-size: clamp(0.8rem, 1.2vw, 1.05rem);
+    opacity: 0;
+    animation: row-in 0.4s ease-out forwards;
+  }
+  @keyframes row-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal-other-row .ro-pos {
+    color: var(--matrix-green-dim);
+    font-weight: bold;
+    min-width: 2.2em;
+  }
+  .reveal-other-row .ro-nome {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: left;
+  }
+  .reveal-other-row .ro-area {
+    color: var(--matrix-green-dim);
+    font-size: 0.85em;
+    letter-spacing: 0.1em;
+  }
+  .reveal-other-row .ro-meta {
+    color: var(--matrix-green);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.4);
+    white-space: nowrap;
+  }
 
   /* ============ TELAS ESTREITAS (preview / notebook) ============ */
   .screen { overflow-y: auto; scrollbar-width: none; }
@@ -1202,8 +1264,8 @@
 
 <!-- ===================== TELA 1: ENTRADA ===================== -->
 <div class="screen active" id="screen-intro">
-  <h1 class="glitch" data-text="SHARK TANK IA">SHARK TANK IA</h1>
-  <div class="tagline">Bem-vindo ao tanque. Siga o coelho branco.<span class="cursor">&nbsp;</span></div>
+  <h1 class="glitch" data-text="SHANKTRIX">SHANKTRIX</h1>
+  <div class="tagline">Bem-vindo ao tanque. Siga o tubarão.<span class="cursor">&nbsp;</span></div>
   <pre id="shark-intro"></pre>
   <div class="pills">
     <button class="pill-wrap blue-pill" id="pill-blue">
@@ -1220,7 +1282,7 @@
 <div id="blue-msg">
   ERRO 404: COVARDIA DETECTADA_<br/>
   A Matrix não aceita a pílula azul hoje.<br/>
-  O sorteio é inevitável, Sr. Anderson.
+  O Oráculo é inevitável, Sr. Bolivar.
 </div>
 
 <!-- ===================== TELA 2: SORTEIO ===================== -->
@@ -1235,7 +1297,7 @@
     <div id="stage-display"></div>
     <div id="case-list"></div>
     <button class="action-btn" id="draw-btn"></button>
-    <div class="hint">[ ENTER ] ou [ ESPAÇO ] para sortear</div>
+    <div class="hint">[ ENTER ] ou [ ESPAÇO ] para consultar o oráculo</div>
   </div>
 </div>
 
@@ -1244,7 +1306,7 @@
   <div class="winner-header">
     <div class="winner-kicker-row">
       <div id="winner-kicker"></div>
-      <button id="winner-more" type="button" style="display:none">▸ ver mais_</button>
+      <button id="winner-more" type="button" style="display:none">▸ materiais de apoio_</button>
     </div>
     <h1 id="winner-name"></h1>
     <div id="winner-author"></div>
@@ -1317,10 +1379,10 @@
   <button class="ghost-btn" id="reset-btn" style="margin-top:3vh">&gt; reiniciar simulação_</button>
 </div>
 
-<!-- ===================== TELA 3.5: REGRAS DO SORTEIO ===================== -->
+<!-- ===================== TELA 3.5: REGRAS DO ORÁCULO ===================== -->
 <div class="screen" id="screen-rules-draw">
   <div class="rules-header">
-    <div class="rules-kicker">// PROTOCOLO SHARK TANK IA</div>
+    <div class="rules-kicker">// PROTOCOLO SHANKTRIX</div>
     <h1 class="glitch rules-title" data-text="COMO FUNCIONA">COMO FUNCIONA</h1>
     <div class="tagline">// leia antes de entrar no tanque<span class="cursor">&nbsp;</span></div>
   </div>
@@ -1328,10 +1390,10 @@
   <div class="rules-grid">
     <div class="rule-card">
       <div class="rule-icon">◈</div>
-      <div class="rule-title">SORTEIO</div>
+      <div class="rule-title">ORÁCULO</div>
       <div class="rule-body">
-        Cada área tem <b>1 case ganhador</b> que vai ser sorteado ao vivo.<br/>
-        A ordem de apresentação é aleatória — o tubarão escolhe.
+        O <b>Oráculo</b> define a ordem de apresentação e escolhe <b>1 case por área</b> — tudo ao vivo.<br/>
+        Não há coincidências.
       </div>
     </div>
 
@@ -1340,30 +1402,29 @@
       <div class="rule-title">APRESENTAÇÃO</div>
       <div class="rule-body">
         Cada apresentador tem <b>5 minutos</b> para pitchar seu case.<br/>
-        <span class="rule-warn">Se passar, tem <b>1 min de tolerância</b> antes do buzzer.</span>
+        <span class="rule-warn">No último minuto o cronômetro fica <b>AMARELO</b> e apita em <b>1min · 30s · 10s</b>. Passou do tempo: <b>VERMELHO</b>, com 1 min de tolerância.</span>
       </div>
     </div>
 
     <div class="rule-card">
       <div class="rule-icon">◉</div>
-      <div class="rule-title">DIRETORIA</div>
+      <div class="rule-title">AGENTES</div>
       <div class="rule-body">
-        Depois do pitch, os diretores têm <b>3 minutos</b> pra fazer perguntas e comentários.<br/>
+        Depois do pitch, os <b>agentes</b> têm <b>3 minutos</b> pra fazer perguntas e comentários.<br/>
         É a hora do interrogatório.
       </div>
     </div>
 
     <div class="rule-card">
       <div class="rule-icon">▸</div>
-      <div class="rule-title">VER MAIS</div>
+      <div class="rule-title">MATERIAIS DE APOIO</div>
       <div class="rule-body">
-        Enquanto o apresentador pitcha, dá pra clicar em <b>"ver mais"</b> pra ver imagens e prints do projeto.<br/>
-        Use pra imersão total.
+        Alguns cases têm <b>materiais de apoio</b> — imagens e prints do projeto que podem ser exibidos no telão durante o pitch.
       </div>
     </div>
   </div>
 
-  <button class="action-btn rules-next-btn" id="rules-draw-next">&gt; INICIAR SORTEIO</button>
+  <button class="action-btn rules-next-btn" id="rules-draw-next">&gt; ACESSAR O ORÁCULO</button>
   <div class="hint">[ ENTER ] ou [ ESPAÇO ] para continuar</div>
 </div>
 
@@ -1383,7 +1444,8 @@
         <div>1. abra o navegador do celular</div>
         <div>2. entre com seu nome + área</div>
         <div>3. você tem <b>01:30</b> e <b>$500.000</b></div>
-        <div>4. invista no case que você acredita</div>
+        <div>4. invista nos cases que acreditar</div>
+        <div>5. <b>menos no da sua própria área</b></div>
       </div>
       <div class="qr-mega-counter">
         <div class="qr-mega-count-num" id="qr-mega-counter">0 / 0</div>
@@ -1396,7 +1458,7 @@
 <!-- ===================== TELA 4.5: REGRAS DO BANK ===================== -->
 <div class="screen" id="screen-rules-bank">
   <div class="rules-header">
-    <div class="rules-kicker">// PROTOCOLO DO SHARK TANK BANK</div>
+    <div class="rules-kicker">// PROTOCOLO DO SHANKTRIX BANK</div>
     <h1 class="glitch rules-title" data-text="INVESTIMENTO">INVESTIMENTO</h1>
     <div class="tagline">// como funciona a rodada de investimento<span class="cursor">&nbsp;</span></div>
   </div>
@@ -1416,7 +1478,7 @@
       <div class="rule-title">2 · SALDO</div>
       <div class="rule-body">
         Você recebe <b>$ 500.000</b> pra investir.<br/>
-        <span class="rule-warn">Diretores recebem <b>$ 1.000.000</b> (2× o normal).</span>
+        <span class="rule-warn">Agentes recebem <b>$ 1.000.000</b> (2× o normal).</span>
       </div>
     </div>
 
@@ -1435,6 +1497,24 @@
       <div class="rule-body">
         Invista <b>quanto quiser em cada case</b>.<br/>
         Pode dividir entre vários ou concentrar em um só. Escolha com sabedoria.
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">⊘</div>
+      <div class="rule-title">5 · RESTRIÇÃO</div>
+      <div class="rule-body">
+        <span class="rule-warn">É <b>proibido investir no case da sua própria área</b>.</span>
+        O sistema bloqueia automaticamente — nada de puxar sardinha.
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">★</div>
+      <div class="rule-title">6 · VENCEDOR</div>
+      <div class="rule-body">
+        Cada case pontua pela <b>média do que cada área investiu nele</b>, somando as médias de todas as áreas.<br/>
+        Não é a soma bruta — é disputa justa. Também contamos <b>quantos investidores</b> cada case atraiu.
       </div>
     </div>
   </div>
@@ -1457,16 +1537,18 @@
 
     <div id="reveal-totals">
       <div class="reveal-total-card">
-        <div class="reveal-total-label">TOTAL POR INVESTIDOR</div>
-        <div class="reveal-total-value" id="reveal-total-investor">$ 0</div>
-        <div class="reveal-total-sub">soma bruta de todos os aportes</div>
+        <div class="reveal-total-label">INVESTIDORES</div>
+        <div class="reveal-total-value" id="reveal-total-investor">0</div>
+        <div class="reveal-total-sub">pessoas que investiram neste case</div>
       </div>
       <div class="reveal-total-card win">
-        <div class="reveal-total-label">TOTAL POR ÁREA (MÉDIA)</div>
+        <div class="reveal-total-label">TOTAL INVESTIDO</div>
         <div class="reveal-total-value" id="reveal-total-area">$ 0</div>
         <div class="reveal-total-sub" id="reveal-total-breakdown">—</div>
       </div>
     </div>
+
+    <div id="reveal-others"></div>
   </div>
 </div>
 
@@ -2303,7 +2385,7 @@ const AREA_MSGS = [
   "embaralhando os destinos...",
   "hackeando o mainframe do tanque...",
   "o Oráculo está escolhendo...",
-  "não há coincidências, Sr. Anderson...",
+  "não há coincidências, Sr. Bolivar...",
 ];
 const CASE_MSGS = [
   "o tubarão sentiu cheiro de sangue...",
@@ -2365,12 +2447,12 @@ function setupRound() {
   if (state.results.length >= AREAS.length) { showFinal(); return; }
 
   if (state.pendingArea) {
-    // área já sorteada, falta o case
+    // área já escolhida pelo oráculo, falta o case
     const area = AREAS.find((a) => a.nome === state.pendingArea);
-    stageLabel.textContent = "área sorteada — apresentação #" + pos;
+    stageLabel.textContent = "o oráculo escolheu — apresentação #" + pos;
     stageDisplay.textContent = area.nome;
     renderCaseList(area);
-    drawBtn.textContent = "> sortear case";
+    drawBtn.textContent = "> consultar o oráculo (case)";
     drawBtn.disabled = false;
     drawBtn.onclick = () => drawCase(area);
   } else {
@@ -2378,7 +2460,7 @@ function setupRound() {
     stageDisplay.textContent = "?????????";
     caseListEl.classList.remove("show");
     caseListEl.innerHTML = "";
-    drawBtn.textContent = "> sortear área";
+    drawBtn.textContent = "> consultar o oráculo";
     drawBtn.disabled = false;
     drawBtn.onclick = drawArea;
   }
@@ -2579,25 +2661,50 @@ extrasModal.addEventListener("click", (e) => {
 });
 
 /* ---------------- TIMER DO CASE ---------------- */
+
+/* avisos sonoros estilo Matrix: 1 min (aviso), 30 s (alerta), 10 s (urgente) */
+function sfxTimer1min() {
+  // dois beeps médios — "atenção"
+  beep(660, 0.16, 0.09);
+  setTimeout(() => beep(660, 0.16, 0.09), 240);
+}
+function sfxTimer30s() {
+  // três beeps agudos subindo — "apressa"
+  [0, 180, 360].forEach((off, i) =>
+    setTimeout(() => beep(780 + i * 120, 0.12, 0.1), off));
+}
+function sfxTimer10s() {
+  // apito urgente em rajada — "acabou o papo"
+  [0, 140, 280, 420, 560].forEach((off) =>
+    setTimeout(() => beep(1180, 0.09, 0.11), off));
+}
+function sfxTimerZero() {
+  // buzzer grave duplo — estourou o tempo
+  beep(160, 0.35, 0.14);
+  setTimeout(() => beep(120, 0.5, 0.14), 380);
+}
+
 function updateTimerDisplay() {
   const absSecs = Math.abs(timerSeconds);
   const m = String(Math.floor(absSecs / 60)).padStart(2, '0');
   const s = String(absSecs % 60).padStart(2, '0');
   const sign = timerSeconds < 0 ? "-" : "";
   timerDisplay.textContent = sign + m + ":" + s;
-  
+
   const passed = timerTotalSeconds - timerSeconds;
   let pct = (passed / timerTotalSeconds) * 100;
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
   if (timerBarFill) timerBarFill.style.width = pct + "%";
 
-  if (timerSeconds < 0) {
-    timerDisplay.classList.add("overtime");
-    if (timerBarFill) timerBarFill.classList.add("overtime");
-  } else {
-    timerDisplay.classList.remove("overtime");
-    if (timerBarFill) timerBarFill.classList.remove("overtime");
+  // faixas: verde → amarelo (último minuto) → vermelho (estourou)
+  const isWarning = timerSeconds > 0 && timerSeconds <= 60;
+  const isOvertime = timerSeconds < 0;
+  timerDisplay.classList.toggle("warning", isWarning);
+  timerDisplay.classList.toggle("overtime", isOvertime);
+  if (timerBarFill) {
+    timerBarFill.classList.toggle("warning", isWarning);
+    timerBarFill.classList.toggle("overtime", isOvertime);
   }
 }
 
@@ -2622,6 +2729,10 @@ btnTimerPlay.onclick = toggleTimer;
 setInterval(() => {
   if (timerRunning) {
     timerSeconds--;
+    if (timerSeconds === 60) sfxTimer1min();
+    else if (timerSeconds === 30) sfxTimer30s();
+    else if (timerSeconds === 10) sfxTimer10s();
+    else if (timerSeconds === 0) sfxTimerZero();
     updateTimerDisplay();
   }
 }, 1000);
@@ -2672,7 +2783,7 @@ function showWinner(areaName, caseObj, pos) {
       winnerNext.textContent = "> ver ordem final_";
       winnerNext.onclick = showFinal;
     } else {
-      winnerNext.textContent = "> próximo sorteio_";
+      winnerNext.textContent = "> próxima consulta ao oráculo_";
       winnerNext.onclick = () => { showScreen("draw"); setupRound(); };
     }
     winnerNext.style.visibility = "visible";
@@ -2704,7 +2815,7 @@ function showFinal() {
 
 /* ---------------- RESET ---------------- */
 function doReset() {
-  if (!confirm("Reiniciar a simulação? Todo o sorteio será apagado.")) return;
+  if (!confirm("Reiniciar a simulação? Toda a consulta ao oráculo será apagada.")) return;
   state = { results: [], pendingArea: null };
   clearState();
   showScreen("intro");
@@ -2809,9 +2920,13 @@ if (state.results.length >= AREAS.length) {
   const revealTotalInvestor = document.getElementById("reveal-total-investor");
   const revealTotalArea = document.getElementById("reveal-total-area");
   const revealTotalBreakdown = document.getElementById("reveal-total-breakdown");
+  const revealTitleDecoding = document.getElementById("reveal-title-decoding");
+  const revealOthers = document.getElementById("reveal-others");
 
   let currentBackendState = "presenting";
   let riserStopper = null;
+  let suspenseInterval = null;
+  let suspenseTimeouts = [];
 
   function fmtMoneyBR(n) {
     return "$ " + Math.round(Number(n || 0)).toLocaleString("pt-BR");
@@ -2850,30 +2965,64 @@ if (state.results.length >= AREAS.length) {
     getJson("/api/game-state").then((gs) => enterQrScreen(gs || { participantsFinalized: 0, participantsTotal: 0 }));
   };
 
+  /* Mensagens de "processamento" — enrolação proposital pra segurar o
+     suspense enquanto o servidor conta os ~14s até o reveal-result. */
+  const REVEAL_MSGS = [
+    "CONSULTANDO O ORÁCULO_",
+    "AUDITANDO AS CARTEIRAS_",
+    "RECONTANDO OS INVESTIMENTOS_",
+    "VERIFICANDO TRANSAÇÕES SUSPEITAS_",
+    "O TUBARÃO ESTÁ FAREJANDO O DINHEIRO_",
+    "CALCULANDO MÉDIAS PONDERADAS_",
+    "NÃO HÁ COINCIDÊNCIAS, SR. BOLIVAR_",
+    "DESCRIPTOGRAFANDO O VENCEDOR_",
+  ];
+
+  function clearSuspense() {
+    if (suspenseInterval) { clearInterval(suspenseInterval); suspenseInterval = null; }
+    suspenseTimeouts.forEach((t) => clearTimeout(t));
+    suspenseTimeouts = [];
+    if (riserStopper) { riserStopper(); riserStopper = null; }
+    attackEl.classList.remove("show");
+  }
+
   function enterRevealScreen() {
     showScreen("reveal");
     revealIntro.style.display = "";
     revealWinner.style.display = "none";
     revealName.textContent = "";
     revealArea.textContent = "";
-    revealTotalInvestor.textContent = "$ 0";
+    revealTotalInvestor.textContent = "0";
     revealTotalArea.textContent = "$ 0";
     revealTotalBreakdown.textContent = "—";
+    if (revealOthers) revealOthers.innerHTML = "";
 
-    // suspense: riser + tubarão atacando + heartbeat
-    if (riserStopper) riserStopper();
-    riserStopper = sfxRiser(6);
-    sharkAttackEl.textContent = sharkFrame();
-    attackEl.classList.add("show");
-    setTimeout(() => sfxHeartbeat(), 1000);
-    setTimeout(() => sfxHeartbeat(), 2200);
-    setTimeout(() => sfxSharkAttack(), 3600);
+    clearSuspense();
+
+    // Sobe a tensão pelos ~14s: mensagens rotativas + heartbeats + riser longo,
+    // com o ataque do tubarão no meio pra dar um susto.
+    riserStopper = sfxRiser(13);
+    let mi = 0;
+    revealTitleDecoding.textContent = REVEAL_MSGS[0];
+    suspenseInterval = setInterval(() => {
+      mi = (mi + 1) % REVEAL_MSGS.length;
+      revealTitleDecoding.textContent = REVEAL_MSGS[mi];
+      sfxHeartbeat();
+    }, 1700);
+
+    // susto no meio do caminho
+    suspenseTimeouts.push(setTimeout(() => {
+      sharkAttackEl.textContent = sharkFrame();
+      attackEl.classList.add("show");
+      sfxSharkAttack();
+    }, 8000));
+    suspenseTimeouts.push(setTimeout(() => {
+      attackEl.classList.remove("show");
+    }, 11000));
   }
 
   function playRevealResult(payload) {
-    // tira o tubarão de ataque
-    attackEl.classList.remove("show");
-    if (riserStopper) { riserStopper(); riserStopper = null; }
+    clearSuspense();
 
     revealIntro.style.display = "none";
     revealWinner.style.display = "flex";
@@ -2891,9 +3040,9 @@ if (state.results.length >= AREAS.length) {
       sfxVictory();
       revealArea.textContent = "USE CASE " + String(winner.pos || 0).padStart(2, "0") + "  |  " + winner.area;
 
-      // depois anima os totais em cascata
+      // anima os números em cascata: investidores → total → breakdown
       setTimeout(() => {
-        revealTotalInvestor.textContent = fmtMoneyBR(winner.totalByInvestor);
+        revealTotalInvestor.textContent = String(winner.investorCount || 0);
         sfxSlam();
       }, 400);
       setTimeout(() => {
@@ -2906,6 +3055,22 @@ if (state.results.length >= AREAS.length) {
         ).join(" · ");
         revealTotalBreakdown.textContent = bd || "—";
       }, 1800);
+
+      // board com os demais cases (todos veem o resultado de todos)
+      setTimeout(() => {
+        const others = (payload.ranking || []).filter((r) => r.caseId !== winner.caseId);
+        if (!revealOthers || !others.length) return;
+        let html = '<div class="reveal-others-title">// demais cases da rodada</div>';
+        html += others.map((r, i) => `
+          <div class="reveal-other-row" style="animation-delay:${i * 0.25}s">
+            <span class="ro-pos">${i + 2}º</span>
+            <span class="ro-nome">${r.nome} <span class="ro-area">| ${r.area}</span></span>
+            <span class="ro-meta">${fmtMoneyBR(r.totalByArea)} · ${r.investorCount || 0} investidor(es)</span>
+          </div>
+        `).join("");
+        revealOthers.innerHTML = html;
+        others.forEach((_, i) => setTimeout(() => sfxTick(), i * 250));
+      }, 2600);
     });
   }
 

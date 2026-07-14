@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
-  <title>Shark Tank IA — Diretor</title>
+  <title>Shanktrix — Agente</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -14,25 +14,25 @@
 
   <!-- ===================== FASE: APRESENTAÇÃO ===================== -->
   <section id="phase-presenting" class="auth-screen" style="display:none">
-    <h1 class="glitch auth-title" data-text="DIRETORIA">DIRETORIA</h1>
-    <div class="auth-tagline">// modo diretor<span class="cursor">&nbsp;</span></div>
+    <h1 class="glitch auth-title" data-text="AGENTES">AGENTES</h1>
+    <div class="auth-tagline">// modo agente<span class="cursor">&nbsp;</span></div>
     <pre id="shark-ascii-presenting" class="shark-ascii-block"></pre>
     <div class="phase-message">
       <div class="w-status">&gt; STATUS</div>
       <div class="w-blink">APRESENTAÇÃO EM ANDAMENTO_</div>
       <div class="w-hint">
-        acompanhe o telão. quando a rodada de investimento abrir, seu acesso privilegiado libera.
+        acompanhe o telão. quando a rodada de investimento abrir, seu acesso de agente libera.
       </div>
     </div>
   </section>
 
   <!-- ===================== FASE: LOGIN (diretor) ===================== -->
   <section id="phase-login" class="auth-screen" style="display:none">
-    <h1 class="glitch auth-title" data-text="DIRETORIA">DIRETORIA</h1>
+    <h1 class="glitch auth-title" data-text="AGENTES">AGENTES</h1>
     <div class="auth-tagline">// acesso privilegiado<span class="cursor">&nbsp;</span></div>
 
     <div class="login-card director-card">
-      <div class="pick-label">&gt; ACESSO DE DIRETOR</div>
+      <div class="pick-label">&gt; ACESSO DE AGENTE</div>
       <div class="director-hello">
         <div class="director-hello-l">BEM-VINDO,</div>
         <div class="director-hello-name" id="director-hello-name">—</div>
@@ -54,7 +54,7 @@
       <div class="error" id="login-err"></div>
       <button id="director-enter-btn" class="btn director-btn">&gt; ENTRAR NO TANQUE</button>
       <p class="pick-hint">
-        como diretor, você recebe <b>2× mais capital</b> do que os investidores comuns.<br/>
+        como agente, você recebe <b>2× mais capital</b> do que os investidores comuns.<br/>
         use com sabedoria — seu voto pesa no ranking.
       </p>
     </div>
@@ -64,7 +64,7 @@
   <div id="phase-investing" class="app" style="display:none">
     <header class="top-bar">
       <div class="top-row">
-        <div class="top-brand">SHARK <span class="dim">TANK · DIRETOR</span></div>
+        <div class="top-brand">SHANKTRIX <span class="dim">· AGENTE</span></div>
         <button id="logout-btn" class="chip">SAIR</button>
       </div>
 
@@ -80,7 +80,7 @@
 
       <div class="balance-strip director-strip">
         <div>
-          <div class="l">Saldo do diretor <span class="director-tag">2×</span></div>
+          <div class="l">Saldo do agente <span class="director-tag">2×</span></div>
           <div class="name" id="team-name">—</div>
         </div>
         <div class="v" id="team-balance">$ 0</div>
@@ -105,7 +105,7 @@
       </section>
 
       <section id="tab-wallet" class="tab">
-        <div class="section-title">&gt; posições do diretor</div>
+        <div class="section-title">&gt; posições do agente</div>
         <div class="panel" id="my-positions">
           <div class="empty">Ainda sem posições.</div>
         </div>
@@ -211,9 +211,9 @@
     (function () {
       const path = location.pathname.replace(/^\/+/, '').toLowerCase();
       const presets = {
-        claudia: { display: 'CLAUDIA MEIRA' },
-        felipe:  { display: 'FELIPE RESCK'  },
-        ia:      { display: 'IA'            },
+        claudia: { display: 'AGENTE CLAUDIA MEIRA' },
+        felipe:  { display: 'AGENTE FELIPE RESCK'  },
+        ia:      { display: 'AGENTE IA'            },
       };
       const preset = presets[path];
       if (!preset) {
