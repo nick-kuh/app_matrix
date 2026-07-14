@@ -867,6 +867,93 @@
     text-shadow: 0 0 15px var(--matrix-green);
   }
 
+  /* ============ TELAS DE REGRAS (briefings) ============ */
+  #screen-rules-draw, #screen-rules-bank {
+    flex-direction: column;
+    padding: 4vh 4vw;
+    gap: 3vh;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .rules-header {
+    text-align: center;
+    margin-bottom: 1vh;
+  }
+  .rules-kicker {
+    font-size: clamp(0.8rem, 1.3vw, 1.15rem);
+    letter-spacing: 0.35em;
+    color: var(--matrix-green-dim);
+    text-transform: uppercase;
+    margin-bottom: 1.2vh;
+  }
+  .rules-title {
+    font-size: clamp(2rem, 5vw, 4.2rem) !important;
+    letter-spacing: 0.14em;
+  }
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2vh 2vw;
+    max-width: 1300px;
+    width: 100%;
+  }
+  .rule-card {
+    background: rgba(0, 25, 8, 0.75);
+    border: 1px solid var(--matrix-green-dim);
+    padding: 2.5vh 2vw;
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 1.5vw;
+    align-items: start;
+    box-shadow: 0 0 22px rgba(0, 255, 65, 0.1), inset 0 0 40px rgba(0, 255, 65, 0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .rule-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(0, 255, 65, 0.35), inset 0 0 40px rgba(0, 255, 65, 0.07);
+  }
+  .rule-icon {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    color: var(--matrix-green);
+    text-shadow: 0 0 15px var(--matrix-green), 0 0 40px rgba(0, 255, 65, 0.4);
+    text-align: center;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+  .rule-title {
+    font-size: clamp(1rem, 1.6vw, 1.4rem);
+    letter-spacing: 0.2em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 10px var(--matrix-green);
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 0.6vh;
+  }
+  .rule-body {
+    font-size: clamp(0.85rem, 1.15vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.02em;
+    line-height: 1.65;
+  }
+  .rule-body b {
+    color: var(--matrix-green);
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+  }
+  .rule-warn {
+    display: block;
+    margin-top: 0.6vh;
+    color: rgba(255, 191, 0, 0.9);
+    font-size: 0.92em;
+  }
+  .rule-warn b { color: var(--matrix-amber); text-shadow: 0 0 8px rgba(255,191,0,0.5); }
+  .rules-next-btn {
+    margin-top: 2vh;
+  }
+  @media (max-width: 980px) {
+    .rules-grid { grid-template-columns: 1fr; }
+  }
+
   /* ============ TELA QR (rodada de investimento) ============ */
   #screen-qr {
     flex-direction: column;
@@ -1230,6 +1317,56 @@
   <button class="ghost-btn" id="reset-btn" style="margin-top:3vh">&gt; reiniciar simulação_</button>
 </div>
 
+<!-- ===================== TELA 3.5: REGRAS DO SORTEIO ===================== -->
+<div class="screen" id="screen-rules-draw">
+  <div class="rules-header">
+    <div class="rules-kicker">// PROTOCOLO SHARK TANK IA</div>
+    <h1 class="glitch rules-title" data-text="COMO FUNCIONA">COMO FUNCIONA</h1>
+    <div class="tagline">// leia antes de entrar no tanque<span class="cursor">&nbsp;</span></div>
+  </div>
+
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div class="rule-icon">◈</div>
+      <div class="rule-title">SORTEIO</div>
+      <div class="rule-body">
+        Cada área tem <b>1 case ganhador</b> que vai ser sorteado ao vivo.<br/>
+        A ordem de apresentação é aleatória — o tubarão escolhe.
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">▶</div>
+      <div class="rule-title">APRESENTAÇÃO</div>
+      <div class="rule-body">
+        Cada apresentador tem <b>5 minutos</b> para pitchar seu case.<br/>
+        <span class="rule-warn">Se passar, tem <b>1 min de tolerância</b> antes do buzzer.</span>
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">◉</div>
+      <div class="rule-title">DIRETORIA</div>
+      <div class="rule-body">
+        Depois do pitch, os diretores têm <b>3 minutos</b> pra fazer perguntas e comentários.<br/>
+        É a hora do interrogatório.
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">▸</div>
+      <div class="rule-title">VER MAIS</div>
+      <div class="rule-body">
+        Enquanto o apresentador pitcha, dá pra clicar em <b>"ver mais"</b> pra ver imagens e prints do projeto.<br/>
+        Use pra imersão total.
+      </div>
+    </div>
+  </div>
+
+  <button class="action-btn rules-next-btn" id="rules-draw-next">&gt; INICIAR SORTEIO</button>
+  <div class="hint">[ ENTER ] ou [ ESPAÇO ] para continuar</div>
+</div>
+
 <!-- ===================== TELA 4: QR (rodada de investimento) ===================== -->
 <div class="screen" id="screen-qr">
   <h1 class="glitch qr-title" data-text="INVISTAM">INVISTAM</h1>
@@ -1254,6 +1391,56 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ===================== TELA 4.5: REGRAS DO BANK ===================== -->
+<div class="screen" id="screen-rules-bank">
+  <div class="rules-header">
+    <div class="rules-kicker">// PROTOCOLO DO SHARK TANK BANK</div>
+    <h1 class="glitch rules-title" data-text="INVESTIMENTO">INVESTIMENTO</h1>
+    <div class="tagline">// como funciona a rodada de investimento<span class="cursor">&nbsp;</span></div>
+  </div>
+
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div class="rule-icon">◈</div>
+      <div class="rule-title">1 · ENTRAR</div>
+      <div class="rule-body">
+        Escaneie o <b>QR CODE</b> com seu celular.<br/>
+        Informe seu <b>nome</b> e escolha sua <b>área</b>.
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">$</div>
+      <div class="rule-title">2 · SALDO</div>
+      <div class="rule-body">
+        Você recebe <b>$ 500.000</b> pra investir.<br/>
+        <span class="rule-warn">Diretores recebem <b>$ 1.000.000</b> (2× o normal).</span>
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">◉</div>
+      <div class="rule-title">3 · TEMPO</div>
+      <div class="rule-body">
+        Você tem <b>1 minuto e 30 segundos</b> pra distribuir o seu capital.<br/>
+        <span class="rule-warn">Quando o tempo acaba, a bolsa fecha pra você.</span>
+      </div>
+    </div>
+
+    <div class="rule-card">
+      <div class="rule-icon">▸</div>
+      <div class="rule-title">4 · APOSTAR</div>
+      <div class="rule-body">
+        Invista <b>quanto quiser em cada case</b>.<br/>
+        Pode dividir entre vários ou concentrar em um só. Escolha com sabedoria.
+      </div>
+    </div>
+  </div>
+
+  <button class="action-btn rules-next-btn" id="rules-bank-next">&gt; MOSTRAR QR CODE</button>
+  <div class="hint">quando estiverem prontos, apertem para revelar o QR</div>
 </div>
 
 <!-- ===================== TELA 5: REVELAÇÃO ===================== -->
@@ -2031,9 +2218,11 @@ const remainingAreas = () =>
 /* ---------------- ELEMENTOS ---------------- */
 const screens = {
   intro: document.getElementById("screen-intro"),
+  rulesDraw: document.getElementById("screen-rules-draw"),
   draw: document.getElementById("screen-draw"),
   winner: document.getElementById("screen-winner"),
   final: document.getElementById("screen-final"),
+  rulesBank: document.getElementById("screen-rules-bank"),
   qr: document.getElementById("screen-qr"),
   reveal: document.getElementById("screen-reveal"),
 };
@@ -2526,6 +2715,12 @@ resetCorner.onclick = doReset;
 /* ---------------- PÍLULAS ---------------- */
 document.getElementById("pill-red").onclick = () => {
   sfxRedPill();
+  showScreen("rulesDraw");
+};
+
+/* Botão "iniciar sorteio" dentro do briefing */
+document.getElementById("rules-draw-next").onclick = () => {
+  sfxKey();
   showScreen("draw");
   setupRound();
 };
@@ -2545,7 +2740,13 @@ addEventListener("keydown", (e) => {
   }
   if (e.key === "Enter" || e.key === " ") {
     if (extrasModal.classList.contains("show")) return; // não vaza pro botão next
-    if (screens.draw.classList.contains("active") && !drawBtn.disabled) {
+    if (screens.rulesDraw && screens.rulesDraw.classList.contains("active")) {
+      e.preventDefault();
+      document.getElementById("rules-draw-next").click();
+    } else if (screens.rulesBank && screens.rulesBank.classList.contains("active")) {
+      e.preventDefault();
+      document.getElementById("rules-bank-next").click();
+    } else if (screens.draw.classList.contains("active") && !drawBtn.disabled) {
       e.preventDefault();
       drawBtn.click();
     } else if (screens.winner.classList.contains("active") && winnerNext.style.visibility !== "hidden") {
@@ -2629,6 +2830,26 @@ if (state.results.length >= AREAS.length) {
     }
   }
 
+  // Briefing do bank: quando o admin abre a rodada, para primeiro no briefing.
+  // O operador aperta "MOSTRAR QR CODE" pra revelar. Se alguém abrir o telão
+  // já com investing rolando (ex: reconectando), pula direto pro QR.
+  let hasEverEnteredQr = false;
+  let hasShownBankBriefing = false;
+
+  function enterBankBriefing() {
+    if (hasShownBankBriefing || hasEverEnteredQr) return;
+    hasShownBankBriefing = true;
+    showScreen("rulesBank");
+    sfxKey();
+  }
+
+  document.getElementById("rules-bank-next").onclick = () => {
+    sfxRedPill();
+    hasEverEnteredQr = true;
+    // pega estado atual pra popular o contador
+    getJson("/api/game-state").then((gs) => enterQrScreen(gs || { participantsFinalized: 0, participantsTotal: 0 }));
+  };
+
   function enterRevealScreen() {
     showScreen("reveal");
     revealIntro.style.display = "";
@@ -2692,18 +2913,22 @@ if (state.results.length >= AREAS.length) {
     if (!gs) return;
     currentBackendState = gs.state;
     if (gs.state === "investing") {
-      // Só entra na tela de QR se o telão já terminou a apresentação.
-      // Se ainda está no meio do sorteio, deixa o usuário terminar visualmente
-      // — mas o admin normalmente só abre a rodada quando chegou na tela final.
-      if (screens.qr && !screens.qr.classList.contains("active")) {
-        // Se estiver em intro/draw ainda, força a transição pra QR
-        enterQrScreen(gs);
-      } else {
-        // já tá na tela QR, só atualiza counter
+      // Se já está no QR, só atualiza o contador.
+      if (screens.qr && screens.qr.classList.contains("active")) {
         if (qrMegaCounter) {
           qrMegaCounter.textContent = (gs.participantsFinalized || 0) + " / " + (gs.participantsTotal || 0);
         }
+        return;
       }
+      // Se alguém já finalizou, é sinal de que a rodada já rola há algum tempo
+      // e o telão está reconectando — pula o briefing e vai direto pro QR.
+      if ((gs.participantsFinalized || 0) > 0 || (gs.participantsTotal || 0) > 0) {
+        hasEverEnteredQr = true;
+        enterQrScreen(gs);
+        return;
+      }
+      // Caso normal: admin acabou de abrir a rodada — mostra o briefing.
+      enterBankBriefing();
     } else if (gs.state === "revealing") {
       if (!screens.reveal.classList.contains("active")) {
         enterRevealScreen();

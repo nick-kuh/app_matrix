@@ -1325,6 +1325,95 @@ body {
   color: var(--matrix-green);
 }
 
+/* Diretor — variação do login card */
+.director-card {
+  border: 2px solid var(--matrix-amber);
+  box-shadow: 0 0 40px rgba(255,191,0,0.35), inset 0 0 30px rgba(255,191,0,0.06);
+}
+.director-card .pick-label {
+  color: var(--matrix-amber);
+  text-shadow: 0 0 8px rgba(255,191,0,0.5);
+}
+.director-hello {
+  text-align: center;
+  padding: 14px 0 18px;
+  border-bottom: 1px dashed var(--matrix-green-dark);
+  margin-bottom: 14px;
+}
+.director-hello-l {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--matrix-green-dim);
+  margin-bottom: 6px;
+}
+.director-hello-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--matrix-amber);
+  text-shadow: 0 0 12px var(--matrix-amber), 0 0 40px rgba(255,191,0,0.4);
+  letter-spacing: 0.1em;
+}
+.director-perks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.director-perks .perk {
+  border: 1px solid var(--matrix-green-dark);
+  padding: 8px 6px;
+  text-align: center;
+  background: rgba(0,15,4,0.65);
+}
+.director-perks .perk-l {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.director-perks .perk-v {
+  display: block;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--matrix-amber);
+  text-shadow: 0 0 6px rgba(255,191,0,0.5);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.btn.director-btn {
+  border-color: var(--matrix-amber);
+  color: var(--matrix-amber);
+  text-shadow: 0 0 6px rgba(255,191,0,0.5);
+  box-shadow: 0 0 18px rgba(255,191,0,0.3);
+}
+.btn.director-btn:hover:not(:disabled) {
+  background: rgba(255,191,0,0.12);
+  box-shadow: 0 0 30px rgba(255,191,0,0.55);
+}
+
+.balance-strip.director-strip {
+  border-color: var(--matrix-amber);
+  box-shadow: 0 0 20px rgba(255,191,0,0.25);
+}
+.balance-strip.director-strip .v {
+  color: var(--matrix-amber);
+  text-shadow: 0 0 10px var(--matrix-amber);
+}
+.director-tag {
+  display: inline-block;
+  background: var(--matrix-amber);
+  color: #000;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 6px;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 /* ============================================================
    TIMER DO JOGADOR (bank)
    ============================================================ */

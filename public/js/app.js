@@ -47,6 +47,8 @@ function escapeHtml(s) {
     .replaceAll("'", '&#39;');
 }
 
+const IS_DIRECTOR_MODE = !!window.DIRECTOR_CODENAME;
+
 let state = {
   team: null,
   cases: [],
@@ -59,6 +61,7 @@ let state = {
   investingStartedAt: null,
   finalizedAt: null,
   areas: [],
+  isDirector: false,
 };
 
 let sharkAnims = [];
@@ -160,6 +163,7 @@ async function submitLogin() {
     state.investingStartedAt = data.investingStartedAt;
     state.finalizedAt = null;
     state.investWindowMs = data.investWindowMs || state.investWindowMs;
+    state.isDirector = !!data.isDirector;
     await afterLogin();
   } catch (e) {
     const map = {
@@ -169,6 +173,29 @@ async function submitLogin() {
       area_invalida: 'Área inválida.',
     };
     errEl.textContent = '> ' + (map[e.data?.error] || 'não foi possível entrar');
+  }
+}
+
+async function submitDirectorLogin() {
+  const errEl = $('#login-err');
+  if (errEl) errEl.textContent = '';
+  try {
+    const data = await api('/api/director-login', {
+      method: 'POST',
+      body: { codename: window.DIRECTOR_CODENAME },
+    });
+    state.team = { id: data.id, name: data.name, area: data.area, balance: data.balance };
+    state.investingStartedAt = data.investingStartedAt;
+    state.finalizedAt = null;
+    state.investWindowMs = data.investWindowMs || state.investWindowMs;
+    state.isDirector = true;
+    await afterLogin();
+  } catch (e) {
+    const map = {
+      fase_invalida: 'A rodada ainda não abriu. Aguarde o admin.',
+      diretor_invalido: 'Codename inválido.',
+    };
+    if (errEl) errEl.textContent = '> ' + (map[e.data?.error] || 'não foi possível entrar');
   }
 }
 
@@ -506,7 +533,15 @@ async function refreshMe() {
     state.investingStartedAt = d.team.investingStartedAt || null;
     state.finalizedAt = d.team.finalizedAt || null;
     state.investWindowMs = d.investWindowMs || state.investWindowMs;
+    state.isDirector = !!d.team.isDirector;
     renderTeam();
+    // atualiza preview do saldo do diretor com o valor real vindo do backend
+    if (IS_DIRECTOR_MODE) {
+      const preview = document.getElementById('director-balance-preview');
+      if (preview && d.startingBalance) {
+        preview.textContent = fmtMoney(d.startingBalance * 2);
+      }
+    }
     return d.team;
   } catch { return null; }
 }
@@ -645,14 +680,38 @@ function connectEvents() {
 
 /* ---------------- BOOT ---------------- */
 
-$('#login-btn').addEventListener('click', submitLogin);
-$('#login-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
-$('#login-area').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
+if (IS_DIRECTOR_MODE) {
+  const enterBtn = $('#director-enter-btn');
+  if (enterBtn) enterBtn.addEventListener('click', submitDirectorLogin);
+} else {
+  $('#login-btn')?.addEventListener('click', submitLogin);
+  $('#login-name')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
+  $('#login-area')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitLogin(); });
+}
 
 (async function boot() {
-  await loadAreas();
+  if (!IS_DIRECTOR_MODE) await loadAreas();
   await fetchGameState();
-  const me = await refreshMe();
+  let me = await refreshMe();
+
+  // Evita "identidade trocada" quando o mesmo browser navega entre rotas
+  // diferentes (/, /claudia, /felipe, /ia). Se a sessão atual não corresponde
+  // à página atual, força logout pra mostrar o login apropriado.
+  //   - Em /diretor/*: só aceita a sessão do mesmo diretor.
+  //   - Em / (bank comum): rejeita sessão de diretor.
+  if (me) {
+    const mismatch = IS_DIRECTOR_MODE
+      ? (!me.isDirector || me.directorCode !== window.DIRECTOR_CODENAME)
+      : (me.isDirector === true);
+    if (mismatch) {
+      await api('/api/logout', { method: 'POST' }).catch(() => {});
+      state.team = null;
+      state.investingStartedAt = null;
+      state.finalizedAt = null;
+      state.isDirector = false;
+      me = null;
+    }
+  }
 
   if (me && state.gameState === 'investing' && !state.finalizedAt) {
     await loadMyStuff();

@@ -18,7 +18,7 @@ const INVEST_WINDOW_MS = 90 * 1000;
 // pequeno slack pra atrasos de rede/relogio na checagem do server
 const INVEST_SLACK_MS = 2000;
 
-// Areas fixas (mesmas do sorteio do telao)
+// Areas fixas (mesmas do sorteio do telao + OUTROS pra quem nao esta em nenhuma)
 const AREAS_LIST = [
   'CONSUMER',
   'CUSTOMER DEVELOPMENT',
@@ -27,7 +27,15 @@ const AREAS_LIST = [
   'STRATEGY',
   'MAKE (BUSINESS OP)',
   'BUSINESS OPERATIONS (MAKE)',
+  'OUTROS',
 ];
+
+// Diretores: nome + area + multiplicador do saldo
+const DIRECTORS = {
+  claudia: { name: 'CLAUDIA MEIRA', area: 'DIRETORIA',      balanceMult: 2 },
+  felipe:  { name: 'FELIPE RESCK',  area: 'DIRETORIA',      balanceMult: 2 },
+  ia:      { name: 'IA',            area: 'DIRETORIA (AI)', balanceMult: 2 },
+};
 
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
@@ -88,6 +96,12 @@ function broadcast(type, payload) {
 // ---------- app ----------
 
 const app = express();
+
+// Render/Railway/Heroku ficam atrás de proxy — sem isso o Express não sabe que
+// a request é HTTPS, o que impede cookie 'secure' de ser setado corretamente e
+// pode deixar o admin sem conseguir logar em produção.
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '512kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -97,6 +111,19 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.setHeader('Expires', '0');
   }
 }));
+
+// Detecta se a request veio via HTTPS (funciona com trust proxy). Cookies
+// 'secure' precisam disso em produção — sem isso o browser rejeita o cookie
+// e o login do admin não persiste.
+function cookieOpts(req, extra = {}) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  return {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isHttps,
+    ...extra,
+  };
+}
 
 // ---------- auth ----------
 
@@ -188,7 +215,7 @@ app.post('/api/team-login', (req, res) => {
   const sid = newId() + newId();
   db.sessions[sid] = team.id;
   save();
-  res.cookie('sid', sid, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 24 * 3600 * 1000 });
+  res.cookie('sid', sid, cookieOpts(req, { maxAge: 30 * 24 * 3600 * 1000 }));
   broadcastGameState();
   res.json({
     id: team.id,
@@ -197,6 +224,52 @@ app.post('/api/team-login', (req, res) => {
     balance: team.balance,
     investingStartedAt: team.investingStartedAt,
     investWindowMs: INVEST_WINDOW_MS,
+    isDirector: !!team.isDirector,
+  });
+});
+
+// Login de diretor — sem input, só o codename da URL. Cria um team com nome
+// pré-definido, área DIRETORIA, saldo 2x.
+app.post('/api/director-login', (req, res) => {
+  if (db.gameState !== 'investing') {
+    return res.status(400).json({ error: 'fase_invalida' });
+  }
+  const codename = String(req.body?.codename || '').trim().toLowerCase();
+  const preset = DIRECTORS[codename];
+  if (!preset) return res.status(400).json({ error: 'diretor_invalido' });
+
+  // Se já existir um diretor com esse nome nesta rodada, reaproveita
+  // (evita duplicar quem recarrega a página). Timer não reinicia.
+  let team = db.teams.find((t) => t.isDirector && t.directorCode === codename && isRoundParticipant(t));
+  if (!team) {
+    const now = Date.now();
+    team = {
+      id: newId(),
+      name: preset.name,
+      area: preset.area,
+      isDirector: true,
+      directorCode: codename,
+      balance: Math.floor(db.startingBalance * (preset.balanceMult || 1)),
+      createdAt: now,
+      investingStartedAt: now,
+      finalizedAt: null,
+    };
+    db.teams.push(team);
+  }
+
+  const sid = newId() + newId();
+  db.sessions[sid] = team.id;
+  save();
+  res.cookie('sid', sid, cookieOpts(req, { maxAge: 30 * 24 * 3600 * 1000 }));
+  broadcastGameState();
+  res.json({
+    id: team.id,
+    name: team.name,
+    area: team.area,
+    balance: team.balance,
+    investingStartedAt: team.investingStartedAt,
+    investWindowMs: INVEST_WINDOW_MS,
+    isDirector: true,
   });
 });
 
@@ -221,6 +294,8 @@ app.get('/api/me', (req, res) => {
       balance: t.balance,
       investingStartedAt: t.investingStartedAt,
       finalizedAt: t.finalizedAt,
+      isDirector: !!t.isDirector,
+      directorCode: t.directorCode || null,
     },
     startingBalance: db.startingBalance,
     investWindowMs: INVEST_WINDOW_MS,
@@ -524,9 +599,7 @@ app.post('/api/telao/reset', (req, res) => {
 app.post('/api/admin/login', (req, res) => {
   const pwd = String(req.body?.password || '');
   if (pwd !== ADMIN_PASSWORD) return res.status(401).json({ error: 'senha_invalida' });
-  res.cookie('admin', hash(ADMIN_PASSWORD), {
-    httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 3600 * 1000,
-  });
+  res.cookie('admin', hash(ADMIN_PASSWORD), cookieOpts(req, { maxAge: 7 * 24 * 3600 * 1000 }));
   res.json({ ok: true });
 });
 
@@ -730,6 +803,11 @@ app.get('/telao', (req, res) => {
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Páginas dos diretores — servem director.html; o frontend lê o codename da URL
+app.get(['/claudia', '/felipe', '/ia'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'director.html'));
 });
 
 app.listen(PORT, () => {

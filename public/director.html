@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Shark Tank IA — Diretor</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <canvas id="rain"></canvas>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- ===================== FASE: APRESENTAÇÃO ===================== -->
+  <section id="phase-presenting" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="DIRETORIA">DIRETORIA</h1>
+    <div class="auth-tagline">// modo diretor<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii-presenting" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; STATUS</div>
+      <div class="w-blink">APRESENTAÇÃO EM ANDAMENTO_</div>
+      <div class="w-hint">
+        acompanhe o telão. quando a rodada de investimento abrir, seu acesso privilegiado libera.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FASE: LOGIN (diretor) ===================== -->
+  <section id="phase-login" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="DIRETORIA">DIRETORIA</h1>
+    <div class="auth-tagline">// acesso privilegiado<span class="cursor">&nbsp;</span></div>
+
+    <div class="login-card director-card">
+      <div class="pick-label">&gt; ACESSO DE DIRETOR</div>
+      <div class="director-hello">
+        <div class="director-hello-l">BEM-VINDO,</div>
+        <div class="director-hello-name" id="director-hello-name">—</div>
+      </div>
+      <div class="director-perks">
+        <div class="perk">
+          <span class="perk-l">SALDO</span>
+          <span class="perk-v" id="director-balance-preview">$ 1.000.000</span>
+        </div>
+        <div class="perk">
+          <span class="perk-l">TEMPO</span>
+          <span class="perk-v">01:30</span>
+        </div>
+        <div class="perk">
+          <span class="perk-l">PRIVILÉGIO</span>
+          <span class="perk-v">2× SALDO</span>
+        </div>
+      </div>
+      <div class="error" id="login-err"></div>
+      <button id="director-enter-btn" class="btn director-btn">&gt; ENTRAR NO TANQUE</button>
+      <p class="pick-hint">
+        como diretor, você recebe <b>2× mais capital</b> do que os investidores comuns.<br/>
+        use com sabedoria — seu voto pesa no ranking.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== FASE: INVESTINDO ===================== -->
+  <div id="phase-investing" class="app" style="display:none">
+    <header class="top-bar">
+      <div class="top-row">
+        <div class="top-brand">SHARK <span class="dim">TANK · DIRETOR</span></div>
+        <button id="logout-btn" class="chip">SAIR</button>
+      </div>
+
+      <div id="player-timer">
+        <div class="timer-line">
+          <span class="l">&gt; TEMPO RESTANTE</span>
+          <span class="v" id="timer-display">01:30</span>
+        </div>
+        <div class="timer-bar-container">
+          <div class="timer-bar-fill" id="player-timer-fill"></div>
+        </div>
+      </div>
+
+      <div class="balance-strip director-strip">
+        <div>
+          <div class="l">Saldo do diretor <span class="director-tag">2×</span></div>
+          <div class="name" id="team-name">—</div>
+        </div>
+        <div class="v" id="team-balance">$ 0</div>
+      </div>
+
+      <div class="case-strip-label">
+        <span>&gt; CASES APRESENTADOS</span>
+        <span id="case-count">0</span>
+      </div>
+      <div class="case-strip" id="case-strip"></div>
+    </header>
+
+    <main class="content">
+      <section id="tab-case" class="tab active">
+        <div id="case-view">
+          <div class="waiting-panel">
+            <div class="w-status">&gt; STATUS</div>
+            <div class="w-blink">AGUARDANDO CASE_</div>
+            <div class="w-hint">selecione um dos cases apresentados acima pra investir</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-wallet" class="tab">
+        <div class="section-title">&gt; posições do diretor</div>
+        <div class="panel" id="my-positions">
+          <div class="empty">Ainda sem posições.</div>
+        </div>
+        <div class="section-title">&gt; extrato</div>
+        <div class="panel">
+          <div id="my-transactions">
+            <div class="empty">Sem movimentações ainda.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="case">
+        <span class="ico">◈</span>Case
+      </button>
+      <button class="nav-btn" data-tab="wallet">
+        <span class="ico">$</span>Carteira
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===================== FASE: WAITING ===================== -->
+  <section id="phase-waiting" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="TEMPO ESGOTADO">TEMPO ESGOTADO</h1>
+    <div class="auth-tagline">// a bolsa fechou pra você<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii-waiting" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; STATUS</div>
+      <div class="w-blink">AGUARDANDO OUTROS INVESTIDORES_</div>
+      <div class="w-hint">
+        <span id="waiting-counter">0 de 0 finalizaram</span>
+        <br/>o resultado será revelado no telão.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FASE: REVELAÇÃO ===================== -->
+  <section id="phase-revealing" class="auth-screen" style="display:none">
+    <h1 class="glitch auth-title" data-text="REVELAÇÃO">REVELAÇÃO</h1>
+    <div class="auth-tagline">// o tubarão está escolhendo o vencedor<span class="cursor">&nbsp;</span></div>
+    <pre id="shark-ascii-revealing" class="shark-ascii-block"></pre>
+    <div class="phase-message">
+      <div class="w-status">&gt; VEJA O TELÃO</div>
+      <div class="w-blink" id="revealing-blink">DECODIFICANDO VENCEDOR_</div>
+      <div class="w-hint" id="revealing-hint">
+        o resultado aparece no telão. este dispositivo apenas espera.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PIX MODAL ===================== -->
+  <div id="pix-modal" class="pix-modal" style="display:none">
+    <div class="pix-sheet">
+      <button class="pix-close" id="pix-close">×</button>
+      <div class="pix-kicker" id="pix-kicker">INVESTIR</div>
+      <div class="pix-target" id="pix-target">—</div>
+      <div class="pix-balance-line">
+        <span id="pix-balance-l">Saldo disponível</span>
+        <span class="pix-balance-v" id="pix-balance-v">$ 0</span>
+      </div>
+      <div class="pix-amount" id="pix-amount">$ 0</div>
+      <div class="pix-quick" id="pix-quick">
+        <button class="chip" data-q="1000">+1K</button>
+        <button class="chip" data-q="5000">+5K</button>
+        <button class="chip" data-q="10000">+10K</button>
+        <button class="chip" data-q="50000">+50K</button>
+        <button class="chip" data-q="100000">+100K</button>
+        <button class="chip" data-max="1">MAX</button>
+      </div>
+      <div class="pix-pad">
+        <button data-k="1">1</button>
+        <button data-k="2">2</button>
+        <button data-k="3">3</button>
+        <button data-k="4">4</button>
+        <button data-k="5">5</button>
+        <button data-k="6">6</button>
+        <button data-k="7">7</button>
+        <button data-k="8">8</button>
+        <button data-k="9">9</button>
+        <button data-k="000" class="pad-000">000</button>
+        <button data-k="0">0</button>
+        <button data-k="del" class="pad-del">←</button>
+      </div>
+      <button id="pix-confirm" class="btn pix-confirm">&gt; CONFIRMAR</button>
+    </div>
+  </div>
+
+  <div id="receipt" class="receipt-modal" style="display:none">
+    <div class="receipt-sheet">
+      <div class="receipt-check">✓</div>
+      <div class="receipt-title" id="receipt-title">TRANSAÇÃO OK</div>
+      <div class="receipt-amount" id="receipt-amount">$ 0</div>
+      <div class="receipt-info" id="receipt-info">—</div>
+      <div class="receipt-time" id="receipt-time">—</div>
+    </div>
+  </div>
+
+  <div id="toast-host"></div>
+
+  <script>
+    // Detecta qual diretor a partir da URL (/claudia, /felipe, /ia)
+    (function () {
+      const path = location.pathname.replace(/^\/+/, '').toLowerCase();
+      const presets = {
+        claudia: { display: 'CLAUDIA MEIRA' },
+        felipe:  { display: 'FELIPE RESCK'  },
+        ia:      { display: 'IA'            },
+      };
+      const preset = presets[path];
+      if (!preset) {
+        document.body.innerHTML = '<div style="color:#00ff41;padding:40px;font-family:monospace">' +
+          '&gt; diretor desconhecido: /' + path + '<br><br>rotas válidas: /claudia · /felipe · /ia</div>';
+        return;
+      }
+      window.DIRECTOR_CODENAME = path;
+      const nameEl = document.getElementById('director-hello-name');
+      if (nameEl) nameEl.textContent = preset.display;
+    })();
+  </script>
+  <script src="/js/rain.js"></script>
+  <script src="/js/shark-ascii.js"></script>
+  <script src="/js/app.js?v=4"></script>
+</body>
+</html>
