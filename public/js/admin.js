@@ -65,6 +65,7 @@ async function showPanel() {
   $('#admin-panel').style.display = 'block';
   connectEvents();
   await refreshState();
+  loadCasesBank();
 }
 
 let lastState = null;
@@ -80,6 +81,35 @@ async function refreshState() {
     renderUsers(d.teams || [], d.investWindowMs);
   } catch (e) {
     console.error('refreshState err', e);
+  }
+}
+
+/* ---- banco de cases (catálogo completo + simulação no telão) ---- */
+async function loadCasesBank() {
+  const box = $('#cases-bank');
+  try {
+    const d = await api('/api/telao/areas');
+    const areas = d.areas || [];
+    if (!areas.length) {
+      box.innerHTML = '<div class="empty">Catálogo vazio. Abra o telão uma vez pra sincronizar.</div>';
+      return;
+    }
+    box.innerHTML = areas.map((a, ai) => `
+      <div class="bank-area">
+        <div class="bank-area-name">${escapeHtml(a.nome)}</div>
+        <div class="bank-cases">
+          ${(a.cases || []).map((c, ci) => `
+            <a class="bank-case" href="/telao?sim=${ai}-${ci}" target="_blank" rel="noopener">
+              <span class="bank-case-nome">${escapeHtml(c.nome)}</span>
+              <span class="bank-case-autor">${escapeHtml(c.autor || '')}</span>
+              <span class="bank-case-go">&gt; simular no telão</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    box.innerHTML = '<div class="empty">Erro ao carregar catálogo.</div>';
   }
 }
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SHANKTRIX — Oráculo Matrix</title>
+<title>SHARKTRIX — Oráculo Matrix</title>
 <style>
   :root {
     --matrix-green: #00ff41;
@@ -462,9 +462,9 @@
     text-align: left;
     justify-content: flex-start;
     align-items: center;
-    padding: 3.5vh 4vw 8vh;
-    gap: 1.6vh;
-    overflow-y: auto;
+    padding: 3vh 4vw 7vh;
+    gap: 1.4vh;
+    overflow: hidden;
   }
   .winner-header {
     width: 100%;
@@ -681,8 +681,8 @@
     justify-content: center;
     background: rgba(0, 8, 2, 0.92);
     backdrop-filter: blur(4px);
-    padding: 3vh 4vw;
-    overflow-y: auto;
+    padding: 2.5vh 4vw;
+    overflow: hidden;
   }
   #extras-modal.show {
     display: flex;
@@ -771,12 +771,14 @@
     bottom: -10px; right: -10px;
     clip-path: polygon(100% 100%, 100% 0, 0 100%);
   }
-  .extra-frame img {
+  .extra-frame img,
+  .extra-frame video {
     width: 100%;
     height: 100%;
     object-fit: contain;
     position: relative;
     z-index: 1;
+    background: #000;
   }
   /* placeholder quando não há imagem */
   .extra-placeholder {
@@ -812,6 +814,26 @@
   @media (max-width: 980px) {
     #extras-grid { grid-template-columns: 1fr; }
     #extras-close { position: static; margin-top: 2vh; }
+  }
+  #winner-redraw {
+    position: absolute;
+    bottom: 3.5vh;
+    left: 3vw;
+    background: transparent;
+    border: 1px solid rgba(255, 34, 68, 0.35);
+    color: rgba(255, 34, 68, 0.75);
+    font-family: inherit;
+    font-size: clamp(0.7rem, 0.9vw, 0.88rem);
+    letter-spacing: 0.2em;
+    padding: 1vh 1.8vw;
+    cursor: pointer;
+    text-transform: lowercase;
+    transition: all 0.2s;
+  }
+  #winner-redraw:hover {
+    color: var(--matrix-red);
+    border-color: var(--matrix-red);
+    box-shadow: 0 0 18px rgba(255, 34, 68, 0.35);
   }
   #winner-next {
     position: absolute;
@@ -879,40 +901,40 @@
   /* ============ TELAS DE REGRAS (briefings) ============ */
   #screen-rules-draw, #screen-rules-bank {
     flex-direction: column;
-    padding: 4vh 4vw;
-    gap: 3vh;
+    padding: 2.5vh 4vw;
+    gap: 2vh;
     justify-content: flex-start;
     align-items: center;
   }
   .rules-header {
     text-align: center;
-    margin-bottom: 1vh;
+    margin-bottom: 0.5vh;
   }
   .rules-kicker {
-    font-size: clamp(0.8rem, 1.3vw, 1.15rem);
+    font-size: clamp(0.75rem, 1.1vw, 1rem);
     letter-spacing: 0.35em;
     color: var(--matrix-green-dim);
     text-transform: uppercase;
-    margin-bottom: 1.2vh;
+    margin-bottom: 0.8vh;
   }
   .rules-title {
-    font-size: clamp(2rem, 5vw, 4.2rem) !important;
+    font-size: clamp(1.6rem, 4vw, 3.2rem) !important;
     letter-spacing: 0.14em;
   }
   .rules-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2vh 2vw;
+    gap: 1.4vh 1.6vw;
     max-width: 1300px;
     width: 100%;
   }
   .rule-card {
     background: rgba(0, 25, 8, 0.75);
     border: 1px solid var(--matrix-green-dim);
-    padding: 2.5vh 2vw;
+    padding: 1.6vh 1.5vw;
     display: grid;
-    grid-template-columns: 60px 1fr;
-    gap: 1.5vw;
+    grid-template-columns: 52px 1fr;
+    gap: 1.2vw;
     align-items: start;
     box-shadow: 0 0 22px rgba(0, 255, 65, 0.1), inset 0 0 40px rgba(0, 255, 65, 0.04);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -940,10 +962,10 @@
     margin-bottom: 0.6vh;
   }
   .rule-body {
-    font-size: clamp(0.85rem, 1.15vw, 1.05rem);
+    font-size: clamp(0.78rem, 1.05vw, 0.98rem);
     color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0.02em;
-    line-height: 1.65;
+    line-height: 1.5;
   }
   .rule-body b {
     color: var(--matrix-green);
@@ -957,7 +979,10 @@
   }
   .rule-warn b { color: var(--matrix-amber); text-shadow: 0 0 8px rgba(255,191,0,0.5); }
   .rules-next-btn {
-    margin-top: 2vh;
+    margin-top: 1vh;
+  }
+  #screen-rules-draw .hint, #screen-rules-bank .hint {
+    margin-top: 0.8vh;
   }
   @media (max-width: 980px) {
     .rules-grid { grid-template-columns: 1fr; }
@@ -1224,9 +1249,11 @@
     white-space: nowrap;
   }
 
-  /* ============ TELAS ESTREITAS (preview / notebook) ============ */
-  .screen { overflow-y: auto; scrollbar-width: none; }
+  /* ============ SEM SCROLL: conteudo que passar da tela é reescalado
+     pela função fitScreen() — nunca aparece barra de rolagem ============ */
+  .screen { overflow: hidden; scrollbar-width: none; }
   .screen::-webkit-scrollbar { display: none; }
+  .fit-scaled { transform-origin: top center; }
 
   @media (max-width: 980px) {
     .screen { justify-content: safe center; }
@@ -1264,7 +1291,7 @@
 
 <!-- ===================== TELA 1: ENTRADA ===================== -->
 <div class="screen active" id="screen-intro">
-  <h1 class="glitch" data-text="SHANKTRIX">SHANKTRIX</h1>
+  <h1 class="glitch" data-text="SHARKTRIX">SHARKTRIX</h1>
   <div class="tagline">Bem-vindo ao tanque. Siga o tubarão.<span class="cursor">&nbsp;</span></div>
   <pre id="shark-intro"></pre>
   <div class="pills">
@@ -1349,6 +1376,7 @@
     <div id="w-timetovalue"></div>
   </div>
 
+  <button id="winner-redraw" type="button">↩ voltar ao oráculo_</button>
   <button id="winner-next"></button>
 </div>
 
@@ -1382,7 +1410,7 @@
 <!-- ===================== TELA 3.5: REGRAS DO ORÁCULO ===================== -->
 <div class="screen" id="screen-rules-draw">
   <div class="rules-header">
-    <div class="rules-kicker">// PROTOCOLO SHANKTRIX</div>
+    <div class="rules-kicker">// PROTOCOLO SHARKTRIX</div>
     <h1 class="glitch rules-title" data-text="COMO FUNCIONA">COMO FUNCIONA</h1>
     <div class="tagline">// leia antes de entrar no tanque<span class="cursor">&nbsp;</span></div>
   </div>
@@ -1458,7 +1486,7 @@
 <!-- ===================== TELA 4.5: REGRAS DO BANK ===================== -->
 <div class="screen" id="screen-rules-bank">
   <div class="rules-header">
-    <div class="rules-kicker">// PROTOCOLO DO SHANKTRIX BANK</div>
+    <div class="rules-kicker">// PROTOCOLO DO SHARKTRIX BANK</div>
     <h1 class="glitch rules-title" data-text="INVESTIMENTO">INVESTIMENTO</h1>
     <div class="tagline">// como funciona a rodada de investimento<span class="cursor">&nbsp;</span></div>
   </div>
@@ -1790,18 +1818,20 @@ const AREAS = [
     nome: "MAKE (BUSINESS OP)",
     cases: [
       {
-        nome: "Automação Operacional (Aguardando case oficial)",
-        autor: "Time MAKE",
+        nome: "Agente de IA para Diarização",
+        autor: "Felipe Zompero",
         duracao: "5 minutos",
-        desafio: "Atualmente, o processo de gestão da operação de negócio carece de automação rápida, exigindo alto esforço manual e repetitivo na conferência de dados logísticos e operacionais.",
-        stakeholder: "Liderança MAKE",
-        solucao: "Implementação de um agente IA integrado para reconciliação automática de processos e apontamento de gargalos em tempo real nas esteiras de produção.",
-        tools: [{ name: "Copilot", highlight: true }, "Power Automate", "Power BI"],
+        desafio: "Processo manual e demorado (½ dia). Dependência de conhecimento individual. Comparações manuais em Excel. Sujeito a erros e inconsistências. Comunicação não padronizada com a CEVA.<br><br>Risco de falta de materiais para produção. Risco de parada de linha (shortage). Baixa visibilidade para decisões de movimentação logística.",
+        stakeholder: "Logística Valinhos | Hugo Mariano | Catia Navarro",
+        solucao: "IA analisa Planning + SAP WM. Identifica riscos e necessidades de movimentação. Recomenda ações para abastecimento da produção.",
+        tools: [{ name: "M365 Copilot", highlight: true }, "SAP", "SharePoint"],
         impacto: [
-          { value: "Redução do esforço operacional em mais de 40%;" },
-          { value: "Previsibilidade e maior agilidade na detecção de anomalias operacionais." }
+          { label: "Tempo", value: "redução de ½ dia para < 1 hora ou menos" },
+          { label: "Produção", value: "menor risco de shortage e parada de linha" },
+          { label: "Qualidade", value: "análises mais precisas e consistentes" },
+          { label: "Decisão", value: "mais rápida e orientada por dados" }
         ],
-        timeToValue: "Em desenvolvimento"
+        timeToValue: "4 Semanas"
       }
     ]
   }
@@ -2277,7 +2307,40 @@ const REVEAL_FX = [fxScramble, fxTypewriter, fxRainfall, fxStrobe, fxWordSlam, f
 
 /* ---------------- ESTADO ---------------- */
 const STORAGE_KEY = "sharktank-matrix-v1";
-let state = { results: [], pendingArea: null }; // results: [{area, caso}]
+let state = { results: [], pendingArea: null, rejected: {} }; // results: [{area, caso}]
+
+/* Modo simulação: /telao?sim=<areaIdx>-<caseIdx> abre um case direto,
+   sem tocar no sorteio real nem criar cases no servidor. */
+const SIM_PARAM = new URLSearchParams(location.search).get("sim");
+const SIM_MODE = SIM_PARAM != null;
+
+/* Catálogo de materiais de apoio (pasta "Material de Apoio" no servidor) */
+let materialsCatalog = [];
+function normalizeName(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+function materialsFor(caseObj) {
+  if (!caseObj) return [];
+  const key = normalizeName(caseObj.nome);
+  const hit = materialsCatalog.find((m) => m.normalized === key);
+  return hit ? hit.items : [];
+}
+fetch("/api/materials?t=" + Date.now())
+  .then((r) => r.json())
+  .then((d) => {
+    materialsCatalog = d.materials || [];
+    // se um case já está na tela, reavalia o botão de materiais
+    if (screens.winner.classList.contains("active") && currentExtrasContext) {
+      const has = materialsFor(currentExtrasContext.caseObj).length > 0 ||
+        (currentExtrasContext.caseObj.extras || []).length > 0;
+      winnerMoreBtn.style.display = has ? "" : "none";
+    }
+  })
+  .catch(() => {});
 
 /* persistência é opcional: se o navegador bloquear o storage, o sorteio segue normalmente */
 function saveState() {
@@ -2287,8 +2350,9 @@ function loadState() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) state = JSON.parse(raw);
-    if (!state || !Array.isArray(state.results)) state = { results: [], pendingArea: null };
-  } catch (e) { state = { results: [], pendingArea: null }; }
+    if (!state || !Array.isArray(state.results)) state = { results: [], pendingArea: null, rejected: {} };
+    if (!state.rejected) state.rejected = {};
+  } catch (e) { state = { results: [], pendingArea: null, rejected: {} }; }
 }
 function clearState() {
   try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
@@ -2312,6 +2376,7 @@ const winnerKicker = document.getElementById("winner-kicker");
 const winnerName = document.getElementById("winner-name");
 const winnerAuthor = document.getElementById("winner-author");
 const winnerNext = document.getElementById("winner-next");
+const winnerRedraw = document.getElementById("winner-redraw");
 const wDesafio = document.getElementById("w-desafio");
 const wStakeholder = document.getElementById("w-stakeholder");
 const wSolucao = document.getElementById("w-solucao");
@@ -2348,10 +2413,51 @@ const attackEl = document.getElementById("shark-attack");
 const finalBoard = document.getElementById("final-board");
 const resetCorner = document.getElementById("reset-corner");
 
+/* ---------------- AUTOFIT (sem scroll) ----------------
+   Se o conteúdo de uma tela passar da altura da janela, a tela inteira é
+   reescalada (transform: scale) até caber — nunca aparece barra de rolagem. */
+function fitScreen(el) {
+  if (!el) return;
+  el.style.transform = "";
+  el.classList.add("fit-scaled");
+  const needed = el.scrollHeight;
+  const avail = window.innerHeight;
+  if (needed > avail + 2) {
+    const k = Math.max(0.45, avail / needed);
+    el.style.transform = "scale(" + k + ")";
+  }
+}
+
+function fitActiveScreen() {
+  const active = document.querySelector(".screen.active");
+  // dupla passada: uma imediata e uma após imagens/fonts assentarem
+  requestAnimationFrame(() => {
+    fitScreen(active);
+    setTimeout(() => fitScreen(active), 250);
+  });
+}
+
+addEventListener("resize", fitActiveScreen);
+
+// Watchdog: garante o fit mesmo quando o evento resize não dispara
+// (projetores, mudança de zoom, imagens que terminam de carregar depois).
+setInterval(() => {
+  const active = document.querySelector(".screen.active");
+  if (!active) return;
+  const scaled = !!active.style.transform;
+  if (!scaled && active.scrollHeight > window.innerHeight + 2) {
+    fitScreen(active);
+  }
+}, 1000);
+
 function showScreen(name) {
-  Object.values(screens).forEach((s) => s.classList.remove("active"));
+  Object.values(screens).forEach((s) => {
+    s.classList.remove("active");
+    s.style.transform = "";
+  });
   screens[name].classList.add("active");
   resetCorner.classList.toggle("show", name !== "intro");
+  fitActiveScreen();
 }
 
 /* ---------------- PAINEL DE SLOTS ---------------- */
@@ -2464,15 +2570,22 @@ function setupRound() {
     drawBtn.disabled = false;
     drawBtn.onclick = drawArea;
   }
+  fitActiveScreen();
+}
+
+function rejectedOf(areaName) {
+  return (state.rejected && state.rejected[areaName]) || [];
 }
 
 function renderCaseList(area, winnerCase) {
   caseListEl.innerHTML = "";
   caseListEl.classList.add("show");
+  const rejected = rejectedOf(area.nome);
   area.cases.forEach((c) => {
     const div = document.createElement("div");
     div.className = "case-item";
     if (winnerCase) div.classList.add(c === winnerCase ? "winner" : "dead");
+    else if (rejected.includes(c.nome)) div.classList.add("dead");
     div.textContent = c.nome;
     caseListEl.appendChild(div);
   });
@@ -2516,7 +2629,12 @@ function drawCase(area) {
   if (busy) return;
   busy = true;
   drawBtn.disabled = true;
-  const chosen = area.cases[rand(area.cases.length)];
+  // exclui cases rejeitados via "voltar ao oráculo"; se todos foram
+  // rejeitados, libera a lista inteira de novo (fallback)
+  const rejected = rejectedOf(area.nome);
+  let pool = area.cases.filter((c) => !rejected.includes(c.nome));
+  if (!pool.length) pool = area.cases;
+  const chosen = pool[rand(pool.length)];
   const items = [...caseListEl.children];
   const winnerIdx = area.cases.indexOf(chosen);
   const stopMsgs = rotateLabel(items.length === 1 ? ["case único da área — sem escapatória..."] : CASE_MSGS);
@@ -2603,6 +2721,22 @@ function clearDetails() {
   timerRunning = false;
 }
 
+/* Reescala o conteúdo do modal de materiais pra caber na tela sem scroll */
+function fitExtras() {
+  const content = document.getElementById("extras-content");
+  if (!content) return;
+  content.style.transform = "";
+  content.style.transformOrigin = "top center";
+  const avail = window.innerHeight * 0.94;
+  const need = content.scrollHeight;
+  if (need > avail) {
+    content.style.transform = "scale(" + Math.max(0.4, avail / need) + ")";
+  }
+}
+addEventListener("resize", () => {
+  if (extrasModal.classList.contains("show")) fitExtras();
+});
+
 function openExtras() {
   if (!currentExtrasContext) return;
   const { area, caseObj, pos } = currentExtrasContext;
@@ -2616,40 +2750,76 @@ function openExtras() {
     autor && dur ? autor + "  |  " + dur : autor || dur;
 
   extrasGrid.innerHTML = "";
-  (caseObj.extras || []).forEach((sc) => {
+
+  // materiais reais da pasta "Material de Apoio" têm prioridade;
+  // se não houver, cai nos extras hardcoded do case (legado)
+  const serverItems = materialsFor(caseObj);
+  const items = serverItems.length
+    ? serverItems
+    : (caseObj.extras || []).map((sc) => ({
+        type: "image",
+        label: sc.label || "",
+        url: sc.img || "",
+      }));
+
+  // grid adapta ao número de itens (1 grandão, 2 lado a lado, 3+ em colunas)
+  const n = items.length;
+  extrasGrid.style.gridTemplateColumns =
+    n <= 1 ? "minmax(0, 900px)" : n === 2 ? "repeat(2, 1fr)" : n === 4 ? "repeat(2, 1fr)" : "repeat(3, 1fr)";
+  extrasGrid.style.justifyContent = "center";
+
+  items.forEach((it) => {
     const wrap = document.createElement("div");
     wrap.className = "extra-showcase";
     const lbl = document.createElement("div");
     lbl.className = "label";
-    lbl.textContent = sc.label || "";
+    lbl.textContent = it.label || "";
     const frame = document.createElement("div");
     frame.className = "extra-frame";
-    if (sc.img) {
+    if (it.type === "video" && it.url) {
+      const vid = document.createElement("video");
+      vid.src = it.url;
+      vid.controls = true;
+      vid.muted = true;
+      vid.loop = true;
+      vid.playsInline = true;
+      vid.autoplay = true;
+      vid.onloadedmetadata = fitExtras;
+      frame.appendChild(vid);
+    } else if (it.url) {
       const im = document.createElement("img");
-      im.src = sc.img;
-      im.alt = sc.label || "";
-      // se a imagem não carregar (arquivo ainda não subiu), cai no placeholder
+      im.src = it.url;
+      im.alt = it.label || "";
+      im.onload = fitExtras;
       im.onerror = () => {
         frame.innerHTML =
           '<div class="extra-placeholder"><span class="icon">◈</span>' +
-          (sc.label || "") + "<br/>[ imagem indisponível ]</div>";
+          (it.label || "") + "<br/>[ arquivo indisponível ]</div>";
       };
       frame.appendChild(im);
     } else {
       frame.innerHTML =
         '<div class="extra-placeholder"><span class="icon">◈</span>' +
-        (sc.label || "") + "<br/>[ preview ]</div>";
+        (it.label || "") + "<br/>[ preview ]</div>";
     }
     wrap.appendChild(lbl);
     wrap.appendChild(frame);
     extrasGrid.appendChild(wrap);
   });
 
+  if (!items.length) {
+    extrasGrid.innerHTML =
+      '<div class="extra-placeholder" style="grid-column:1/-1;"><span class="icon">◈</span>sem materiais de apoio para este case</div>';
+  }
+
   extrasModal.classList.add("show");
   sfxRedPill();
   document.querySelector('.extras-header').after(timerContainer);
+  requestAnimationFrame(fitExtras);
 }
 function closeExtras() {
+  // pausa vídeos ao fechar
+  extrasGrid.querySelectorAll("video").forEach((v) => { try { v.pause(); } catch (e) {} });
   extrasModal.classList.remove("show");
   sfxKey();
   document.querySelector('.winner-header').after(timerContainer);
@@ -2750,14 +2920,17 @@ function showWinner(areaName, caseObj, pos) {
     "USE CASE " + String(pos).padStart(2, "0") +
     '<span class="sep">|</span>' + areaName;
 
-  // botão "ver mais_" aparece para TODOS os cases
-  winnerMoreBtn.style.display = "";
+  // botão "materiais de apoio_" só aparece se o case tiver materiais
+  const hasMats = materialsFor(caseObj).length > 0 || (caseObj.extras || []).length > 0;
+  winnerMoreBtn.style.display = hasMats ? "" : "none";
   currentExtrasContext = { area: areaName, caseObj, pos };
 
   winnerName.textContent = "";
   winnerName.style.opacity = "1";
   winnerNext.style.visibility = "hidden";
   winnerNext.onclick = null;
+  winnerRedraw.style.visibility = "hidden";
+  winnerRedraw.onclick = null;
 
   const fx = REVEAL_FX[(pos - 1) % REVEAL_FX.length];
   fx(winnerName, caseObj.nome, () => {
@@ -2778,6 +2951,17 @@ function showWinner(areaName, caseObj, pos) {
       : "";
 
     fadeInDetails();
+    fitActiveScreen();
+
+    if (SIM_MODE) {
+      winnerNext.textContent = "> fechar simulação_";
+      winnerNext.onclick = () => {
+        window.close();
+        setTimeout(() => { location.href = "/telao"; }, 300);
+      };
+      winnerNext.style.visibility = "visible";
+      return; // simulação não mexe no sorteio real
+    }
 
     if (pos >= AREAS.length) {
       winnerNext.textContent = "> ver ordem final_";
@@ -2787,7 +2971,30 @@ function showWinner(areaName, caseObj, pos) {
       winnerNext.onclick = () => { showScreen("draw"); setupRound(); };
     }
     winnerNext.style.visibility = "visible";
+
+    // "voltar ao oráculo": desfaz este resultado e re-sorteia a mesma área,
+    // excluindo este case do pool (caso a apresentação não role)
+    winnerRedraw.style.visibility = "visible";
+    winnerRedraw.onclick = () => {
+      if (!confirm('Voltar ao oráculo e sortear OUTRO case de "' + areaName + '"?\nEste case sai do sorteio desta área.')) return;
+      redrawArea(areaName, caseObj);
+    };
   });
+}
+
+/* Desfaz o último resultado e devolve a área pro oráculo, queimando o case
+   rejeitado. O heartbeat do bridge remove o case do servidor em seguida. */
+function redrawArea(areaName, caseObj) {
+  const last = state.results[state.results.length - 1];
+  if (!last || last.area !== areaName) return; // só o último case pode voltar
+  state.results.pop();
+  state.pendingArea = areaName;
+  if (!state.rejected) state.rejected = {};
+  const rej = state.rejected[areaName] = state.rejected[areaName] || [];
+  if (!rej.includes(caseObj.nome)) rej.push(caseObj.nome);
+  saveState();
+  showScreen("draw");
+  setupRound();
 }
 
 /* ---------------- TELA FINAL ---------------- */
@@ -2797,6 +3004,7 @@ function showFinal() {
   const lines = state.results.map(
     (r, i) => String(i + 1).padStart(2, "0") + "  »  " + r.area + "  —  " + r.caso.nome
   );
+  setTimeout(fitActiveScreen, 100);
   // efeito de digitação linha a linha
   lines.forEach((text, li) => {
     const div = document.createElement("div");
@@ -2815,9 +3023,13 @@ function showFinal() {
 
 /* ---------------- RESET ---------------- */
 function doReset() {
-  if (!confirm("Reiniciar a simulação? Toda a consulta ao oráculo será apagada.")) return;
-  state = { results: [], pendingArea: null };
+  if (!confirm("Reiniciar a simulação? Toda a consulta ao oráculo será apagada (inclusive os cases do bank).")) return;
+  state = { results: [], pendingArea: null, rejected: {} };
   clearState();
+  // reseta o servidor também: destrava gameState (revealed → presenting) e
+  // limpa cases/investimentos — sem isso os cases novos não apareciam no bank
+  fetch("/api/telao/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+    .catch(() => {});
   showScreen("intro");
 }
 document.getElementById("reset-btn").onclick = doReset;
@@ -2869,7 +3081,17 @@ addEventListener("keydown", (e) => {
 
 /* ---------------- BOOT (restaura sessão se houver) ---------------- */
 loadState();
-if (state.results.length >= AREAS.length) {
+if (SIM_MODE) {
+  // /telao?sim=<areaIdx>-<caseIdx>: abre o case direto pra simulação
+  const parts = String(SIM_PARAM).split("-").map(Number);
+  const simArea = AREAS[parts[0]];
+  const simCase = simArea && simArea.cases[parts[1]];
+  if (simArea && simCase) {
+    showWinner(simArea.nome, simCase, (parts[0] % AREAS.length) + 1);
+  } else {
+    showScreen("intro");
+  }
+} else if (state.results.length >= AREAS.length) {
   showFinal();
 } else if (state.results.length > 0 || state.pendingArea) {
   showScreen("draw");
@@ -2894,20 +3116,23 @@ if (state.results.length >= AREAS.length) {
       .then((r) => r.json())
       .catch(() => null);
 
-  // Sync inicial das áreas + cases (o backend cacheia o catalogo completo)
+  // Sync inicial das áreas + cases (o backend cacheia o catalogo completo).
+  // Reposta a cada 30s pra sobreviver a restart do servidor (Render free
+  // reinicia e perde o data.json).
   post("/api/telao/areas", { areas: AREAS });
+  setInterval(() => post("/api/telao/areas", { areas: AREAS }), 30000);
 
-  // Heartbeat com o estado atual do sorteio (a cada 1.5s).
-  let lastSig = "";
+  // Heartbeat com o estado atual do sorteio — SEMPRE reposta (idempotente via
+  // telaoKey no servidor). Antes só postava quando o estado mudava, e se o
+  // servidor resetasse/reiniciasse os cases nunca eram recriados: era o bug
+  // dos "cases que não aparecem no bank/admin".
   setInterval(() => {
-    const sig = JSON.stringify(state.results.map((r) => r.caso.nome)) + "|" + (state.pendingArea || "");
-    if (sig === lastSig) return;
-    lastSig = sig;
+    if (SIM_MODE) return; // simulação nunca mexe no sorteio real
     post("/api/telao/state", {
       results: state.results,
       pendingArea: state.pendingArea,
     });
-  }, 1500);
+  }, 3000);
 
   /* ---------------- fases: QR + revelação ---------------- */
   const qrMegaImg = document.getElementById("qr-mega-img");
@@ -3070,12 +3295,13 @@ if (state.results.length >= AREAS.length) {
         `).join("");
         revealOthers.innerHTML = html;
         others.forEach((_, i) => setTimeout(() => sfxTick(), i * 250));
+        fitActiveScreen();
       }, 2600);
     });
   }
 
   function handleGameState(gs) {
-    if (!gs) return;
+    if (!gs || SIM_MODE) return; // aba de simulação ignora as fases do jogo
     currentBackendState = gs.state;
     if (gs.state === "investing") {
       // Se já está no QR, só atualiza o contador.
@@ -3135,19 +3361,23 @@ if (state.results.length >= AREAS.length) {
     } catch (err) {}
   });
   es.addEventListener("reveal-start", () => {
+    if (SIM_MODE) return;
     enterRevealScreen();
   });
   es.addEventListener("reveal-result", (e) => {
+    if (SIM_MODE) return;
     try { playRevealResult(JSON.parse(e.data)); } catch (err) {}
   });
 
   // ao carregar, pega estado corrente pra saber onde o telão deve estar
-  getJson("/api/game-state").then((gs) => {
-    if (!gs) return;
-    if (gs.state === "investing" || gs.state === "revealing" || gs.state === "revealed") {
-      handleGameState(gs);
-    }
-  });
+  if (!SIM_MODE) {
+    getJson("/api/game-state").then((gs) => {
+      if (!gs) return;
+      if (gs.state === "investing" || gs.state === "revealing" || gs.state === "revealed") {
+        handleGameState(gs);
+      }
+    });
+  }
 })();
 </script>
 </body>

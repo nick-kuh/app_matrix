@@ -1790,3 +1790,56 @@ body {
 }
 .rank-row .info .dim { color: var(--matrix-green-dim); font-size: 11px; }
 
+/* ============================================================
+   ADMIN — BANCO DE CASES
+   ============================================================ */
+.bank-area {
+  margin-bottom: 14px;
+}
+.bank-area-name {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--matrix-green-dim);
+  text-transform: uppercase;
+  border-bottom: 1px dashed var(--matrix-green-dark);
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+}
+.bank-cases {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bank-case {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--matrix-green-dark);
+  background: rgba(0,15,4,0.55);
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bank-case:hover {
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 14px rgba(0,255,65,0.3);
+}
+.bank-case-nome {
+  color: var(--matrix-green);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+.bank-case-autor {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.bank-case-go {
+  color: var(--matrix-green-dim);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+}
+.bank-case:hover .bank-case-go { color: var(--matrix-green); }
+

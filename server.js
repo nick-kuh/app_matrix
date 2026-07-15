@@ -1,6 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { randomBytes, createHash } from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -111,6 +111,58 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.setHeader('Expires', '0');
   }
 }));
+
+// ---------- materiais de apoio ----------
+// Pasta "Material de Apoio/<nome do case>/<arquivos>" na raiz do projeto.
+// Servida em /materiais/... e listada em /api/materials.
+
+const MATERIALS_DIR = path.join(__dirname, 'Material de Apoio');
+const MATERIAL_EXTS = {
+  image: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+  video: ['.mp4', '.webm', '.mov'],
+};
+
+app.use('/materiais', express.static(MATERIALS_DIR));
+
+// normaliza nomes pra casar pasta ↔ case (sem acento, minusculo, so letras/numeros)
+function normalizeName(s) {
+  return String(s || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function listMaterials() {
+  const out = [];
+  if (!existsSync(MATERIALS_DIR)) return out;
+  for (const dir of readdirSync(MATERIALS_DIR)) {
+    const full = path.join(MATERIALS_DIR, dir);
+    let st;
+    try { st = statSync(full); } catch { continue; }
+    if (!st.isDirectory()) continue;
+    const items = [];
+    for (const f of readdirSync(full)) {
+      const ext = path.extname(f).toLowerCase();
+      const type = MATERIAL_EXTS.image.includes(ext) ? 'image'
+        : MATERIAL_EXTS.video.includes(ext) ? 'video' : null;
+      if (!type) continue;
+      items.push({
+        type,
+        label: path.basename(f, ext),
+        url: '/materiais/' + encodeURIComponent(dir) + '/' + encodeURIComponent(f),
+      });
+    }
+    if (items.length) {
+      out.push({ caseName: dir, normalized: normalizeName(dir), items });
+    }
+  }
+  return out;
+}
+
+app.get('/api/materials', (req, res) => {
+  res.json({ materials: listMaterials() });
+});
 
 // Detecta se a request veio via HTTPS (funciona com trust proxy). Cookies
 // 'secure' precisam disso em produção — sem isso o browser rejeita o cookie
@@ -547,19 +599,47 @@ app.post('/api/telao/areas', (req, res) => {
   res.json({ ok: true, count: areas.length });
 });
 
+// Catalogo completo de areas+cases (usado pelo banco de cases do admin)
+app.get('/api/telao/areas', (req, res) => {
+  res.json({ areas: db.areas || [] });
+});
+
 app.post('/api/telao/state', (req, res) => {
   // durante revealing/revealed nao aceita cases novos (evita corrida)
   if (db.gameState !== 'presenting' && db.gameState !== 'investing') {
-    return res.json({ ok: true, ignored: true });
+    return res.json({ ok: true, ignored: true, gameState: db.gameState });
   }
   const results = Array.isArray(req.body?.results) ? req.body.results : [];
   let created = 0;
+  let removed = 0;
+
+  const incomingKeys = new Set(
+    results.filter((r) => r && r.caso && r.caso.nome).map((r) => telaoKey(r.area, r.caso.nome))
+  );
+
+  // prune: case que saiu do sorteio (ex: "voltar ao oraculo" re-sorteou a area)
+  // some do banco — mas só na fase de apresentacao e se ninguem investiu nele.
+  if (db.gameState === 'presenting') {
+    for (let i = db.cases.length - 1; i >= 0; i--) {
+      const c = db.cases[i];
+      if (!c.telaoKey || incomingKeys.has(c.telaoKey)) continue;
+      const hasInvestment = db.investments.some((inv) => inv.caseId === c.id);
+      if (hasInvestment) continue;
+      db.cases.splice(i, 1);
+      broadcast('case-removed', { id: c.id });
+      removed++;
+    }
+  }
 
   results.forEach((r, idx) => {
     if (!r || !r.caso || !r.caso.nome) return;
     const key = telaoKey(r.area, r.caso.nome);
     const existing = db.cases.find((c) => c.telaoKey === key);
-    if (existing) return;
+    if (existing) {
+      // mantem a posicao sincronizada com a ordem atual do telao
+      if (existing.pos !== idx + 1) { existing.pos = idx + 1; }
+      return;
+    }
     const c = {
       id: newId(),
       telaoKey: key,
@@ -584,8 +664,8 @@ app.post('/api/telao/state', (req, res) => {
     created++;
   });
 
-  if (created > 0) save();
-  res.json({ ok: true, created });
+  if (created > 0 || removed > 0) save();
+  res.json({ ok: true, created, removed });
 });
 
 app.post('/api/telao/reset', (req, res) => {
@@ -822,7 +902,7 @@ app.get(['/claudia', '/felipe', '/ia'], (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Shanktrix Bank rodando na porta ${PORT}`);
+  console.log(`Sharktrix Bank rodando na porta ${PORT}`);
   console.log(`  App:   /`);
   console.log(`  Telao: /telao`);
   console.log(`  Admin: /admin`);
