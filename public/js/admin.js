@@ -284,11 +284,10 @@ function renderUsers(teams, investWindowMs) {
   const rows = sorted.map((t, i) => {
     const status = t.finalizedAt ? 'FINALIZADO' : 'INVESTINDO';
     const statusCls = t.finalizedAt ? 'finalized' : 'investing';
-    const remainingMs = t.investingStartedAt
-      ? Math.max(0, (investWindowMs || 90000) - (now - t.investingStartedAt))
-      : 0;
-    const remSec = Math.ceil(remainingMs / 1000);
-    const remTxt = t.finalizedAt ? '—' : (String(Math.floor(remSec / 60)).padStart(2, '0') + ':' + String(remSec % 60).padStart(2, '0'));
+    // sem limite de tempo: mostra ha quanto tempo esta na bolsa
+    const elapsedMs = t.investingStartedAt ? Math.max(0, now - t.investingStartedAt) : 0;
+    const elSec = Math.floor(elapsedMs / 1000);
+    const remTxt = t.finalizedAt ? '—' : (String(Math.floor(elSec / 60)).padStart(2, '0') + ':' + String(elSec % 60).padStart(2, '0'));
     return `
       <div class="rank-row ${i === 0 ? 'top' : ''}">
         <div class="rank-pos">${i + 1}</div>

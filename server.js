@@ -11,12 +11,12 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'shark';
-const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 50000);
+const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 50);
 
-// duracao do timer individual de investimento (por jogador), em ms
-const INVEST_WINDOW_MS = 90 * 1000;
-// pequeno slack pra atrasos de rede/relogio na checagem do server
-const INVEST_SLACK_MS = 2000;
+// Sem limite de tempo individual: o cronometro do app so mostra o tempo
+// decorrido e cada investidor finaliza quando quiser (botao FINALIZAR).
+// Mantido apenas por compatibilidade com clientes antigos.
+const INVEST_WINDOW_MS = 0;
 
 // Areas fixas (mesmas do oraculo do telao + OUTROS pra quem nao esta em nenhuma)
 const AREAS_LIST = [
@@ -417,20 +417,8 @@ app.get('/api/cases/:id', (req, res) => {
 app.post('/api/cases/:id/invest', requireTeam, (req, res) => {
   if (db.gameState !== 'investing') return res.status(400).json({ error: 'rodada_fechada' });
   const team = req.team;
-  if (team.finalizedAt) return res.status(400).json({ error: 'tempo_esgotado' });
-  if (team.investingStartedAt && (Date.now() - team.investingStartedAt) > (INVEST_WINDOW_MS + INVEST_SLACK_MS)) {
-    // auto-finaliza pra manter consistencia
-    team.finalizedAt = Date.now();
-    save();
-    broadcast('team-finalized', {
-      teamId: team.id,
-      name: team.name,
-      area: team.area,
-      ...participantsSummary(),
-    });
-    broadcastGameState();
-    return res.status(400).json({ error: 'tempo_esgotado' });
-  }
+  // sem limite de tempo: so bloqueia quem ja apertou FINALIZAR
+  if (team.finalizedAt) return res.status(400).json({ error: 'rodada_finalizada' });
 
   const c = db.cases.find((x) => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'caso_nao_encontrado' });
@@ -857,30 +845,8 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-// ---------- auto-finalize periodico (garante que timers vencidos fecham) ----------
-
-setInterval(() => {
-  if (db.gameState !== 'investing') return;
-  const now = Date.now();
-  let changed = false;
-  for (const t of db.teams) {
-    if (!isRoundParticipant(t) || t.finalizedAt) continue;
-    if ((now - t.investingStartedAt) > (INVEST_WINDOW_MS + INVEST_SLACK_MS)) {
-      t.finalizedAt = now;
-      changed = true;
-      broadcast('team-finalized', {
-        teamId: t.id,
-        name: t.name,
-        area: t.area,
-        ...participantsSummary(),
-      });
-    }
-  }
-  if (changed) {
-    save();
-    broadcastGameState();
-  }
-}, 2000);
+// (sem auto-finalize: cada investidor encerra manualmente pelo botão
+//  FINALIZAR do app; o admin pode usar "Forçar Encerramento" se precisar)
 
 // ---------- rotas ----------
 

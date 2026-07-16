@@ -103,7 +103,7 @@ function routeByGameState() {
     showPhase('login');
     return;
   }
-  if (state.finalizedAt || timerRemainingMs() <= 0) {
+  if (state.finalizedAt) {
     showPhase('waiting');
     updateWaitingCounter();
     return;
@@ -207,37 +207,27 @@ async function afterLogin() {
   startClientTimer();
 }
 
-/* ---------------- TIMER INDIVIDUAL ---------------- */
+/* ---------------- CRONÔMETRO (só informativo, sem limite) ----------------
+   Mostra há quanto tempo o investidor está na bolsa. Ninguém é expulso por
+   tempo: cada um aperta FINALIZAR quando terminar. */
 
 let timerInterval = null;
 
-function timerRemainingMs() {
-  if (!state.investingStartedAt) return state.investWindowMs;
-  const elapsed = Date.now() - state.investingStartedAt;
-  return Math.max(0, state.investWindowMs - elapsed);
+function timerElapsedMs() {
+  if (!state.investingStartedAt) return 0;
+  return Math.max(0, Date.now() - state.investingStartedAt);
 }
 
 function fmtTimerMs(ms) {
-  const s = Math.max(0, Math.ceil(ms / 1000));
+  const s = Math.max(0, Math.floor(ms / 1000));
   const m = String(Math.floor(s / 60)).padStart(2, '0');
   const r = String(s % 60).padStart(2, '0');
   return m + ':' + r;
 }
 
 function renderTimer() {
-  const rem = timerRemainingMs();
   const disp = $('#timer-display');
-  const fill = $('#player-timer-fill');
-  if (disp) disp.textContent = fmtTimerMs(rem);
-  if (fill) {
-    const pct = Math.max(0, Math.min(100, (rem / state.investWindowMs) * 100));
-    fill.style.width = pct + '%';
-    if (pct < 20) fill.classList.add('critical');
-    else fill.classList.remove('critical');
-  }
-  if (rem <= 0) {
-    handleTimerExpired();
-  }
+  if (disp) disp.textContent = fmtTimerMs(timerElapsedMs());
 }
 
 function startClientTimer() {
@@ -253,7 +243,8 @@ function stopClientTimer() {
   }
 }
 
-async function handleTimerExpired() {
+/* Encerra a participação do investidor (ação manual do botão FINALIZAR) */
+async function finalizeMyRound() {
   if (state.finalizedAt) return;
   state.finalizedAt = Date.now();
   stopClientTimer();
@@ -270,11 +261,11 @@ $('#logout-btn').addEventListener('click', async () => {
   location.reload();
 });
 
-/* ---------------- TERMINAR ANTES DO TEMPO ---------------- */
+/* ---------------- FINALIZAR INVESTIMENTOS ---------------- */
 
 $('#finish-early')?.addEventListener('click', () => {
-  if (!confirm('Encerrar seus investimentos agora? Depois disso não dá mais pra investir.')) return;
-  handleTimerExpired();
+  if (!confirm('Finalizar seus investimentos? Depois disso não dá mais pra investir.')) return;
+  finalizeMyRound();
 });
 
 /* ---------------- TABS ---------------- */
@@ -378,9 +369,9 @@ function renderCaseView() {
     </div>` : '';
 
   const isOwnArea = isMyOwnArea(c);
-  const canInvest = isOpen && !isOwnArea && !state.finalizedAt && timerRemainingMs() > 0;
+  const canInvest = isOpen && !isOwnArea && !state.finalizedAt;
   let blockLabel = 'ENCERRADO';
-  if (isOpen) blockLabel = isOwnArea ? '⊘ CASE DA SUA ÁREA — BLOQUEADO' : 'TEMPO ESGOTADO';
+  if (isOpen) blockLabel = isOwnArea ? '⊘ CASE DA SUA ÁREA — BLOQUEADO' : 'VOCÊ JÁ FINALIZOU';
   const actionRow = canInvest ? `
     <div class="action-row" style="grid-template-columns: 1fr;">
       <button class="btn" id="btn-invest">&gt; INVESTIR</button>
@@ -428,8 +419,8 @@ const pixTarget = $('#pix-target');
 const pixConfirm = $('#pix-confirm');
 
 function openPix(mode, c) {
-  if (state.finalizedAt || timerRemainingMs() <= 0) {
-    toast('Tempo esgotado', 'error');
+  if (state.finalizedAt) {
+    toast('Você já finalizou seus investimentos', 'error');
     return;
   }
   if (isMyOwnArea(c)) {

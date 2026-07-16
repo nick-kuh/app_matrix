@@ -46,10 +46,10 @@
       <div class="error" id="login-err"></div>
       <button id="login-btn" class="btn">&gt; ENTRAR NO TANQUE</button>
       <p class="pick-hint">
-        você recebe <b id="login-starting-balance">$ 50.000</b> pra investir nos cases apresentados.
-        <br/>tempo: <b>1:30</b> depois disso, a bolsa fecha.
+        você recebe <b id="login-starting-balance">$ 50</b> pra investir nos cases apresentados.
+        <br/>invista no seu ritmo — quando terminar, aperte <b>FINALIZAR</b>.
         <br/>⊘ <b>não dá pra investir no case da sua própria área</b>
-        <br/>⚠ investiu, era — <b>como PIX, sem devolução</b>
+        <br/>⚠ investiu, já era — <b>como PIX, sem devolução</b>
       </p>
     </div>
   </section>
@@ -62,16 +62,12 @@
         <button id="logout-btn" class="chip">SAIR</button>
       </div>
 
-      <!-- Timer individual do jogador -->
+      <!-- Cronômetro informativo (sem limite de tempo) -->
       <div id="player-timer">
         <div class="timer-line">
-          <span class="l">&gt; TEMPO RESTANTE</span>
-          <span class="v" id="timer-display">01:30</span>
+          <span class="l">&gt; TEMPO NA BOLSA</span>
+          <span class="v" id="timer-display">00:00</span>
         </div>
-        <div class="timer-bar-container">
-          <div class="timer-bar-fill" id="player-timer-fill"></div>
-        </div>
-        <button id="finish-early" class="finish-early-btn">✓ TERMINEI — ENCERRAR INVESTIMENTOS</button>
       </div>
 
       <div class="balance-strip">
@@ -112,6 +108,11 @@
           </div>
         </div>
       </section>
+
+      <div class="finalize-wrap">
+        <button id="finish-early" class="btn finalize-btn">✓ FINALIZAR MEUS INVESTIMENTOS</button>
+        <p class="finalize-hint">quando terminar de investir, aperte aqui — depois não dá mais pra voltar</p>
+      </div>
     </main>
 
     <nav class="bottom-nav">
@@ -124,10 +125,10 @@
     </nav>
   </div>
 
-  <!-- ===================== FASE: TIMER ESGOTADO (aguardando outros) ===================== -->
+  <!-- ===================== FASE: FINALIZADO (aguardando outros) ===================== -->
   <section id="phase-waiting" class="auth-screen" style="display:none">
-    <h1 class="glitch auth-title" data-text="TEMPO ESGOTADO">TEMPO ESGOTADO</h1>
-    <div class="auth-tagline">// a bolsa fechou pra você<span class="cursor">&nbsp;</span></div>
+    <h1 class="glitch auth-title" data-text="FINALIZADO">FINALIZADO</h1>
+    <div class="auth-tagline">// seus investimentos estão travados no tanque<span class="cursor">&nbsp;</span></div>
     <pre id="shark-ascii-waiting" class="shark-ascii-block"></pre>
     <div class="phase-message">
       <div class="w-status">&gt; STATUS</div>
@@ -167,11 +168,11 @@
       <div class="pix-amount" id="pix-amount">$ 0</div>
 
       <div class="pix-quick" id="pix-quick">
-        <button class="chip" data-q="1000">+1K</button>
-        <button class="chip" data-q="2000">+2K</button>
-        <button class="chip" data-q="5000">+5K</button>
-        <button class="chip" data-q="10000">+10K</button>
-        <button class="chip" data-q="20000">+20K</button>
+        <button class="chip" data-q="1">+1</button>
+        <button class="chip" data-q="2">+2</button>
+        <button class="chip" data-q="5">+5</button>
+        <button class="chip" data-q="10">+10</button>
+        <button class="chip" data-q="25">+25</button>
         <button class="chip" data-max="1">MAX</button>
       </div>
 

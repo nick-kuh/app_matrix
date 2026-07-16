@@ -40,11 +40,11 @@
       <div class="director-perks">
         <div class="perk">
           <span class="perk-l">SALDO</span>
-          <span class="perk-v" id="director-balance-preview">$ 100.000</span>
+          <span class="perk-v" id="director-balance-preview">$ 100</span>
         </div>
         <div class="perk">
           <span class="perk-l">TEMPO</span>
-          <span class="perk-v">01:30</span>
+          <span class="perk-v">LIVRE</span>
         </div>
         <div class="perk">
           <span class="perk-l">PRIVILÉGIO</span>
@@ -70,13 +70,9 @@
 
       <div id="player-timer">
         <div class="timer-line">
-          <span class="l">&gt; TEMPO RESTANTE</span>
-          <span class="v" id="timer-display">01:30</span>
+          <span class="l">&gt; TEMPO NA BOLSA</span>
+          <span class="v" id="timer-display">00:00</span>
         </div>
-        <div class="timer-bar-container">
-          <div class="timer-bar-fill" id="player-timer-fill"></div>
-        </div>
-        <button id="finish-early" class="finish-early-btn">✓ TERMINEI — ENCERRAR INVESTIMENTOS</button>
       </div>
 
       <div class="balance-strip director-strip">
@@ -117,6 +113,11 @@
           </div>
         </div>
       </section>
+
+      <div class="finalize-wrap">
+        <button id="finish-early" class="btn finalize-btn director-btn">✓ FINALIZAR MEUS INVESTIMENTOS</button>
+        <p class="finalize-hint">quando terminar de investir, aperte aqui — depois não dá mais pra voltar</p>
+      </div>
     </main>
 
     <nav class="bottom-nav">
@@ -131,8 +132,8 @@
 
   <!-- ===================== FASE: WAITING ===================== -->
   <section id="phase-waiting" class="auth-screen" style="display:none">
-    <h1 class="glitch auth-title" data-text="TEMPO ESGOTADO">TEMPO ESGOTADO</h1>
-    <div class="auth-tagline">// a bolsa fechou pra você<span class="cursor">&nbsp;</span></div>
+    <h1 class="glitch auth-title" data-text="FINALIZADO">FINALIZADO</h1>
+    <div class="auth-tagline">// seus investimentos estão travados no tanque<span class="cursor">&nbsp;</span></div>
     <pre id="shark-ascii-waiting" class="shark-ascii-block"></pre>
     <div class="phase-message">
       <div class="w-status">&gt; STATUS</div>
@@ -170,11 +171,11 @@
       </div>
       <div class="pix-amount" id="pix-amount">$ 0</div>
       <div class="pix-quick" id="pix-quick">
-        <button class="chip" data-q="1000">+1K</button>
-        <button class="chip" data-q="2000">+2K</button>
-        <button class="chip" data-q="5000">+5K</button>
-        <button class="chip" data-q="10000">+10K</button>
-        <button class="chip" data-q="20000">+20K</button>
+        <button class="chip" data-q="1">+1</button>
+        <button class="chip" data-q="2">+2</button>
+        <button class="chip" data-q="5">+5</button>
+        <button class="chip" data-q="10">+10</button>
+        <button class="chip" data-q="25">+25</button>
         <button class="chip" data-max="1">MAX</button>
       </div>
 

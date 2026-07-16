@@ -1550,10 +1550,11 @@
       <div class="qr-mega-instructions">
         <div>1. abra o navegador do celular</div>
         <div>2. entre com seu nome + área</div>
-        <div>3. você tem <b>01:30</b> e <b>$50.000</b></div>
-        <div>4. invista nos cases que acreditar</div>
+        <div>3. você tem <b>$50</b> — invista no seu ritmo</div>
+        <div>4. pode investir em <b>quantos cases quiser</b></div>
         <div>5. <b>menos no da sua própria área</b></div>
-        <div>6. investiu, era — <b>sem devolução</b></div>
+        <div>6. investiu, <b>já era</b> — sem devolução</div>
+        <div>7. terminou? aperte <b>✓ FINALIZAR</b> no app</div>
       </div>
       <div class="qr-mega-counter">
         <div class="qr-mega-count-num" id="qr-mega-counter">0 / 0</div>
@@ -1585,8 +1586,8 @@
       <div class="rule-icon">$</div>
       <div class="rule-title">2 · SALDO</div>
       <div class="rule-body">
-        Você recebe <b>$ 50.000</b> pra investir.<br/>
-        <span class="rule-warn">Agentes recebem <b>$ 100.000</b> (2× o normal).</span>
+        Você recebe <b>$ 50</b> pra investir.<br/>
+        <span class="rule-warn">Agentes recebem <b>$ 100</b> (2× o normal).</span>
       </div>
     </div>
 
@@ -1594,8 +1595,8 @@
       <div class="rule-icon">◉</div>
       <div class="rule-title">3 · TEMPO</div>
       <div class="rule-body">
-        Você tem <b>1 minuto e 30 segundos</b> pra distribuir o seu capital.<br/>
-        <span class="rule-warn">Quando o tempo acaba, a bolsa fecha pra você.</span>
+        <b>Sem pressa</b> — invista no seu ritmo, o cronômetro só marca o tempo.<br/>
+        <span class="rule-warn">Terminou? Aperte <b>✓ FINALIZAR</b> no app. O resultado sai quando todos finalizarem.</span>
       </div>
     </div>
 
@@ -1603,8 +1604,8 @@
       <div class="rule-icon">▸</div>
       <div class="rule-title">4 · APOSTAR</div>
       <div class="rule-body">
-        Invista <b>quanto quiser em cada case</b>. Pode dividir ou concentrar.<br/>
-        <span class="rule-warn">⚠ Investiu, <b>era</b>: é como PIX — <b>não tem devolução</b>. Escolha com sabedoria.</span>
+        Invista <b>quanto quiser em cada case</b> — e não precisa ser um só: pode apostar em <b>2, 3, até 5 cases</b> se quiser.<br/>
+        <span class="rule-warn">⚠ Investiu, <b>já era</b>: é como PIX — <b>não tem devolução</b>. Escolha com sabedoria.</span>
       </div>
     </div>
 
@@ -2274,6 +2275,9 @@ function contentBottomPx(el) {
   for (const child of el.children) {
     const cs = getComputedStyle(child);
     if (cs.display === "none" || cs.visibility === "hidden") continue;
+    // botões ancorados no rodapé (position absolute/fixed) não são "conteúdo":
+    // eles sempre medem ~100vh e faziam o fit descer pro piso à toa
+    if (cs.position === "absolute" || cs.position === "fixed") continue;
     const r = child.getBoundingClientRect();
     if (r.height > 0) maxBottom = Math.max(maxBottom, r.bottom);
   }
@@ -2296,32 +2300,50 @@ function fitScreen(el) {
   }
 }
 
-/* Fit adaptativo da tela do case: casca com pouco texto fica com fonte
+/* Fit adaptativo da tela do case: case com pouco texto fica com fonte
    GRANDE; cases longos (ex: Nielsen) reduzem a fonte só o necessário até
-   tudo caber — sem cortar nada e sem sumir o time-to-value. */
-const CASE_FS_MAX = 22; // px — cases curtos ficam assim
-const CASE_FS_MIN = 13; // px — piso de legibilidade
+   tudo caber — sem cortar nada e sem sumir o time-to-value.
+   Teto e piso são PROPORCIONAIS À RESOLUÇÃO: monitor grande = letra maior,
+   tela pequena = letra menor. */
+function caseFsBounds() {
+  const h = window.innerHeight;
+  const w = window.innerWidth;
+  // teto: ~3.4% da altura (limitado pela largura pra não estourar linhas)
+  const max = Math.round(Math.min(Math.max(20, h * 0.034), w * 0.0175, 46));
+  // piso: ~1.6% da altura, nunca abaixo de 10px
+  const min = Math.round(Math.max(10, h * 0.016));
+  return { max: Math.max(max, min + 2), min };
+}
 function fitCaseContent() {
   const screen = screens.winner;
   if (!screen) return;
   screen.style.transform = ""; // garante que nenhum scale antigo sobrou
   // reserva o rodapé pros botões (next / voltar ao oráculo)
   const avail = window.innerHeight - Math.max(64, window.innerHeight * 0.075);
-  let fs = CASE_FS_MAX;
+  const bounds = caseFsBounds();
+  let fs = bounds.max;
   screen.style.setProperty("--case-fs", fs + "px");
-  while (fs > CASE_FS_MIN && contentBottomPx(screen) > avail) {
+  while (fs > bounds.min && contentBottomPx(screen) > avail) {
     fs -= 1;
     screen.style.setProperty("--case-fs", fs + "px");
   }
+  // último recurso (telas MUITO baixas): nem no piso coube → encolhe a tela
+  const finalBottom = contentBottomPx(screen);
+  if (finalBottom > avail) {
+    screen.style.transformOrigin = "top center";
+    screen.style.transform = "scale(" + Math.max(0.5, avail / finalBottom) + ")";
+  }
+  screen.dataset.fitted = "1"; // watchdog sabe que o fit já rodou
 }
 
 function fitActiveScreen() {
   const active = document.querySelector(".screen.active");
-  // dupla passada: uma imediata e uma após imagens/fonts assentarem
-  requestAnimationFrame(() => {
-    fitScreen(active);
-    setTimeout(() => fitScreen(active), 250);
-  });
+  // SÍNCRONO — sem requestAnimationFrame: em telões/abas com render
+  // suspenso o rAF nunca dispara e o fit não acontecia. Os timeouts
+  // reforçam depois que fonts/imagens assentam.
+  fitScreen(active);
+  setTimeout(() => fitScreen(active), 150);
+  setTimeout(() => fitScreen(active), 500);
 }
 
 addEventListener("resize", fitActiveScreen);
@@ -2330,12 +2352,15 @@ addEventListener("resize", fitActiveScreen);
 // (projetores, mudança de zoom, imagens que terminam de carregar depois).
 setInterval(() => {
   const active = document.querySelector(".screen.active");
-  if (active && !active.style.transform) {
-    // a tela do case reserva rodapé maior (botões); as demais só 10px
-    const limit = active.id === "screen-winner"
-      ? window.innerHeight - Math.max(64, window.innerHeight * 0.075)
-      : window.innerHeight - 10;
-    if (contentBottomPx(active) > limit + 2) fitScreen(active);
+  if (active && active.id === "screen-winner") {
+    // refit se ainda não rodou pra este conteúdo, ou se algo estourou
+    const limit = window.innerHeight - Math.max(64, window.innerHeight * 0.075);
+    if (!active.dataset.fitted || contentBottomPx(active) > limit + 2) {
+      fitCaseContent();
+    }
+  } else if (active && !active.style.transform &&
+             contentBottomPx(active) > window.innerHeight - 10) {
+    fitScreen(active);
   }
   // modal de materiais aberto também é vigiado
   const modal = document.getElementById("extras-modal");
@@ -2607,6 +2632,7 @@ function fadeInDetails() {
 }
 
 function clearDetails() {
+  delete screens.winner.dataset.fitted; // conteúdo novo → watchdog refita
   winnerKicker.textContent = "";
   winnerAuthor.textContent = "";
   wDesafio.innerHTML = "";
@@ -2906,7 +2932,7 @@ function showWinner(areaName, caseObj, pos) {
       : "";
 
     fadeInDetails();
-    fitActiveScreen();
+    fitCaseContent(); // síncrono: conteúdo acabou de ser populado
 
     if (SIM_MODE) {
       winnerNext.textContent = "> fechar simulação_";
