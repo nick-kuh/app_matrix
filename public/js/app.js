@@ -270,6 +270,13 @@ $('#logout-btn').addEventListener('click', async () => {
   location.reload();
 });
 
+/* ---------------- TERMINAR ANTES DO TEMPO ---------------- */
+
+$('#finish-early')?.addEventListener('click', () => {
+  if (!confirm('Encerrar seus investimentos agora? Depois disso não dá mais pra investir.')) return;
+  handleTimerExpired();
+});
+
 /* ---------------- TABS ---------------- */
 
 $$('.nav-btn').forEach((btn) => {

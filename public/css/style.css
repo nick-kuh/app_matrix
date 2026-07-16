@@ -1461,6 +1461,38 @@ body {
   box-shadow: 0 0 12px var(--matrix-red);
   animation: timer-blink 0.5s steps(2) infinite;
 }
+
+/* botão de encerrar antes do tempo */
+.finish-early-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed var(--matrix-green-dim);
+  color: var(--matrix-green-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.finish-early-btn:hover {
+  color: var(--matrix-green);
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 10px rgba(0,255,65,0.3);
+}
+
+/* aviso de não-devolução no modal PIX */
+.pix-no-refund {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--matrix-amber);
+  text-align: center;
+  margin: 8px 0 2px;
+  opacity: 0.85;
+}
 @keyframes timer-blink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.4; }

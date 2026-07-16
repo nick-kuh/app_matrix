@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'shark';
-const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 500000);
+const STARTING_BALANCE = Number(process.env.STARTING_BALANCE || 50000);
 
 // duracao do timer individual de investimento (por jogador), em ms
 const INVEST_WINDOW_MS = 90 * 1000;
@@ -25,7 +25,7 @@ const AREAS_LIST = [
   'FOCUS MARKET',
   'DATAHUB',
   'STRATEGY',
-  'MAKE (BUSINESS OP)',
+  'MAKE (BUSINESS OPS)',
   'OUTROS',
 ];
 
@@ -899,6 +899,11 @@ app.get('/', (req, res) => {
 // Páginas dos diretores — servem director.html; o frontend lê o codename da URL
 app.get(['/claudia', '/felipe', '/ia'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'director.html'));
+});
+
+// Apresentação do próprio projeto (case do Sharktrix pro townhall)
+app.get('/case_sharktrix', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'case_sharktrix.html'));
 });
 
 app.listen(PORT, () => {
