@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#000000" />
-<title>CASE SHARKTRIX — a história do projeto</title>
+<title>CASE SHARKTRIX</title>
 <style>
   :root {
     --matrix-green: #00ff41;
@@ -35,7 +35,6 @@
     background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
   }
 
-  /* ============ GLITCH ============ */
   .glitch {
     position: relative;
     font-weight: bold;
@@ -59,197 +58,137 @@
   @keyframes ga { 0%{clip-path:inset(10% 0 80% 0)} 40%{clip-path:inset(40% 0 40% 0)} 80%{clip-path:inset(25% 0 55% 0)} 100%{clip-path:inset(55% 0 25% 0)} }
   @keyframes gb { 0%{clip-path:inset(65% 0 15% 0)} 40%{clip-path:inset(50% 0 30% 0)} 80%{clip-path:inset(75% 0 10% 0)} 100%{clip-path:inset(35% 0 45% 0)} }
 
-  /* ============ SLIDES ============ */
-  .slide {
-    position: fixed; inset: 0; z-index: 10;
-    display: none;
+  /* ============ ONEPAGE ============ */
+  #page {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 5vh 7vw;
-    gap: 3vh;
-  }
-  .slide.active { display: flex; animation: slide-in 0.45s ease-out; }
-  @keyframes slide-in {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
+    padding: 2.5vh 4vw;
+    gap: 2vh;
+    transform-origin: top center;
   }
 
   .kicker {
-    font-size: clamp(0.8rem, 1.3vw, 1.15rem);
+    font-size: clamp(0.7rem, 1vw, 0.95rem);
     letter-spacing: 0.4em;
     color: var(--matrix-green-dim);
     text-transform: uppercase;
   }
-  .slide h1 {
-    font-size: clamp(2.2rem, 7vw, 6rem);
-    line-height: 1.1;
-  }
-  .slide h2 {
-    font-size: clamp(1.6rem, 4vw, 3.2rem);
-    letter-spacing: 0.12em;
-    text-shadow: 0 0 14px var(--matrix-green);
-  }
+  h1 { font-size: clamp(1.8rem, 4.6vw, 4rem); line-height: 1.05; }
   .tagline {
-    font-size: clamp(0.95rem, 1.7vw, 1.4rem);
+    font-size: clamp(0.82rem, 1.25vw, 1.1rem);
     color: rgba(255,255,255,0.85);
-    letter-spacing: 0.08em;
-    line-height: 1.8;
-    max-width: 1000px;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+    max-width: 1100px;
   }
   .tagline b { color: var(--matrix-green); text-shadow: 0 0 8px rgba(0,255,65,0.5); }
   .tagline .amber { color: var(--matrix-amber); }
 
-  /* cards de bullets */
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 2vh 1.5vw;
-    width: 100%;
-    max-width: 1300px;
-  }
-  .card {
-    background: rgba(0, 25, 8, 0.75);
-    border: 1px solid var(--matrix-green-dim);
-    padding: 2.6vh 1.8vw;
-    text-align: left;
-    box-shadow: 0 0 22px rgba(0,255,65,0.1), inset 0 0 40px rgba(0,255,65,0.04);
-  }
-  .card .c-icon {
-    font-size: clamp(1.4rem, 2.4vw, 2rem);
-    color: var(--matrix-green);
-    text-shadow: 0 0 14px var(--matrix-green);
-    margin-bottom: 1vh;
-  }
-  .card .c-title {
-    font-size: clamp(0.85rem, 1.25vw, 1.1rem);
-    font-weight: bold;
-    letter-spacing: 0.18em;
-    color: var(--matrix-green);
-    text-transform: uppercase;
-    margin-bottom: 0.8vh;
-    text-shadow: 0 0 8px rgba(0,255,65,0.5);
-  }
-  .card .c-body {
-    font-size: clamp(0.78rem, 1.05vw, 0.98rem);
-    color: rgba(255,255,255,0.85);
-    line-height: 1.6;
-  }
-  .card .c-body b { color: var(--matrix-green); }
-
-  /* timeline */
-  .timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 1.6vh;
-    width: 100%;
-    max-width: 950px;
-    text-align: left;
-  }
-  .t-step {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    gap: 2vw;
-    align-items: baseline;
-    padding: 1.6vh 1.6vw;
-    border: 1px solid var(--matrix-green-dark);
-    background: rgba(0, 15, 4, 0.7);
-  }
-  .t-when {
-    font-size: clamp(0.75rem, 1.05vw, 0.95rem);
-    font-weight: bold;
-    color: var(--matrix-amber);
-    letter-spacing: 0.12em;
-    text-shadow: 0 0 8px rgba(255,191,0,0.4);
-  }
-  .t-what {
-    font-size: clamp(0.85rem, 1.2vw, 1.1rem);
-    color: rgba(255,255,255,0.88);
-    line-height: 1.55;
-  }
-  .t-what b { color: var(--matrix-green); }
-
-  /* números gigantes */
+  /* números grandes */
   .bignums {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: 2vh 1.5vw;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.4vh 1vw;
     width: 100%;
-    max-width: 1250px;
+    max-width: 1560px;
   }
   .bignum {
-    padding: 3vh 1vw;
+    padding: 2.2vh 0.6vw;
     border: 1px solid var(--matrix-green-dim);
-    background: rgba(0, 25, 8, 0.7);
+    background: rgba(0, 25, 8, 0.72);
+    box-shadow: 0 0 18px rgba(0,255,65,0.08), inset 0 0 30px rgba(0,255,65,0.04);
   }
   .bignum .n {
-    font-size: clamp(2.2rem, 5vw, 4.2rem);
+    font-size: clamp(1.9rem, 3.6vw, 3.4rem);
     font-weight: bold;
     color: var(--matrix-green);
     text-shadow: 0 0 18px var(--matrix-green);
     font-variant-numeric: tabular-nums;
+    line-height: 1.1;
   }
   .bignum .l {
-    font-size: clamp(0.7rem, 1vw, 0.9rem);
-    letter-spacing: 0.2em;
+    font-size: clamp(0.62rem, 0.85vw, 0.8rem);
+    letter-spacing: 0.14em;
     color: var(--matrix-green-dim);
     text-transform: uppercase;
-    margin-top: 0.8vh;
-    line-height: 1.5;
+    margin-top: 0.7vh;
+    line-height: 1.45;
   }
 
-  /* navegação */
-  #nav-hint {
-    position: fixed;
-    bottom: 2.5vh;
-    left: 0; right: 0;
-    z-index: 60;
-    text-align: center;
-    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+  /* linha da evolução */
+  .evolution {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6vw;
+    font-size: clamp(0.72rem, 1vw, 0.95rem);
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.82);
+    max-width: 1560px;
+  }
+  .evolution .step {
+    padding: 1vh 1.2vw;
+    border: 1px dashed var(--matrix-green-dark);
+    background: rgba(0, 15, 4, 0.7);
+    white-space: nowrap;
+  }
+  .evolution .step b { color: var(--matrix-green); }
+  .evolution .arrow { color: var(--matrix-green-dim); font-size: 1.2em; }
+
+  /* impacto */
+  .impact {
+    width: 100%;
+    max-width: 1560px;
+    border: 1px solid var(--matrix-amber);
+    background: rgba(40, 28, 0, 0.45);
+    box-shadow: 0 0 26px rgba(255,191,0,0.18), inset 0 0 40px rgba(255,191,0,0.05);
+    padding: 2vh 1.6vw;
+  }
+  .impact-title {
+    font-size: clamp(0.95rem, 1.5vw, 1.4rem);
+    font-weight: bold;
     letter-spacing: 0.3em;
-    color: var(--matrix-green-dark);
-    pointer-events: none;
+    color: var(--matrix-amber);
+    text-shadow: 0 0 14px var(--matrix-amber);
+    text-transform: uppercase;
+    margin-bottom: 1.4vh;
   }
-  #slide-counter {
-    position: fixed;
-    top: 2.5vh; right: 2.5vw;
-    z-index: 60;
-    font-size: clamp(0.75rem, 1vw, 0.9rem);
-    letter-spacing: 0.25em;
-    color: var(--matrix-green-dim);
-    font-variant-numeric: tabular-nums;
-  }
-  .nav-arrow {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 60;
-    background: transparent;
-    border: 1px solid var(--matrix-green-dark);
-    color: var(--matrix-green-dim);
-    font-family: inherit;
-    font-size: clamp(1.2rem, 2vw, 1.8rem);
-    padding: 1.6vh 1vw;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .nav-arrow:hover { color: var(--matrix-green); border-color: var(--matrix-green); box-shadow: 0 0 16px rgba(0,255,65,0.35); }
-  #nav-prev { left: 1.2vw; }
-  #nav-next { right: 1.2vw; }
-
-  .shark-pre {
-    font-size: clamp(5px, 0.9vw, 11px);
-    line-height: 1.05;
-    color: var(--matrix-green);
-    text-shadow: 0 0 6px rgba(0,255,65,0.8);
-    white-space: pre;
+  .impact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1vh 1.4vw;
     text-align: left;
   }
-  .footer-link {
+  .impact-item {
+    display: flex;
+    gap: 0.7vw;
+    align-items: baseline;
+    font-size: clamp(0.75rem, 1.05vw, 1rem);
+    color: rgba(255,255,255,0.88);
+    line-height: 1.5;
+  }
+  .impact-item .ico { color: var(--matrix-amber); text-shadow: 0 0 8px rgba(255,191,0,0.5); }
+  .impact-item b { color: var(--matrix-amber); }
+
+  .footer {
+    font-size: clamp(0.7rem, 0.95vw, 0.9rem);
+    letter-spacing: 0.25em;
     color: var(--matrix-green-dim);
-    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
-    letter-spacing: 0.2em;
+  }
+  .footer b { color: var(--matrix-green); text-shadow: 0 0 8px rgba(0,255,65,0.5); }
+
+  @media (max-width: 980px) {
+    html, body { overflow-y: auto; }
+    #page { position: static; min-height: 100dvh; }
+    .bignums { grid-template-columns: repeat(2, 1fr); }
+    .impact-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -259,182 +198,51 @@
 <div class="scanlines"></div>
 <div class="vignette"></div>
 
-<div id="slide-counter">1 / 8</div>
-<button class="nav-arrow" id="nav-prev">‹</button>
-<button class="nav-arrow" id="nav-next">›</button>
-<div id="nav-hint">[ ← → ] ou [ ESPAÇO ] para navegar</div>
-
-<!-- ============ SLIDE 1: CAPA ============ -->
-<div class="slide active">
+<div id="page">
   <div class="kicker">// USE CASE ESPECIAL | TOWNHALL</div>
   <h1 class="glitch" data-text="CASE SHARKTRIX">CASE SHARKTRIX</h1>
   <div class="tagline">
-    o jogo que transformou o nosso townhall num <b>tanque de tubarões</b> dentro da Matrix.
+    <b>Matrix + Shark Tank</b> — um jogo feito por diversão que virou a plataforma do nosso townhall:
+    sorteio com suspense, pitches cronometrados e <b>investimento ao vivo pelo celular</b>.
+    A ideia nasceu numa conversa de manhã; <span class="amber">2 horas depois a primeira versão já rodava</span>.
   </div>
-  <pre class="shark-pre" id="shark-cover"></pre>
-</div>
 
-<!-- ============ SLIDE 2: A FAÍSCA ============ -->
-<div class="slide">
-  <div class="kicker">// 01 · A FAÍSCA</div>
-  <h2>UMA CONVERSA DE MANHÃ</h2>
-  <div class="tagline">
-    "e se o sorteio dos cases fosse no <b>estilo Matrix</b>?"<br/><br/>
-    A ideia nasceu numa conversa pela manhã, como uma forma de <b>se divertir</b> misturando
-    duas temáticas: <b>Matrix + Shark Tank</b>.<br/>
-    <span class="amber">~2 horas depois, na mesma tarde, a primeira versão já estava rodando.</span>
-  </div>
-</div>
-
-<!-- ============ SLIDE 3: A EVOLUÇÃO ============ -->
-<div class="slide">
-  <div class="kicker">// 02 · A EVOLUÇÃO — 2 SEMANAS</div>
-  <h2>DE UMA PÁGINA A UM ECOSSISTEMA</h2>
-  <div class="timeline">
-    <div class="t-step">
-      <div class="t-when">MANHÃ</div>
-      <div class="t-what">A ideia aparece numa conversa. <b>Matrix + Shark Tank = Sharktrix.</b></div>
-    </div>
-    <div class="t-step">
-      <div class="t-when">+2 HORAS</div>
-      <div class="t-what">Primeira versão no ar: <b>uma página HTML</b> — o telão do sorteio, com chuva de código e suspense.</div>
-    </div>
-    <div class="t-step">
-      <div class="t-when">SEMANA 1</div>
-      <div class="t-what">O telão vira <b>app</b>: banco no celular, investimentos em tempo real, painel de admin e banco de dados.</div>
-    </div>
-    <div class="t-step">
-      <div class="t-when">SEMANA 2</div>
-      <div class="t-what">Só melhoria: fases do jogo, QR code, agentes, materiais de apoio, animações, sons e a <b>revelação do vencedor</b>.</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ SLIDE 4: CONSTRUÍDO COM CLAUDE ============ -->
-<div class="slide">
-  <div class="kicker">// 03 · COMO FOI FEITO</div>
-  <h2>100% CONSTRUÍDO COM CLAUDE</h2>
-  <div class="tagline">
-    cada linha de código, animação, som e regra de negócio:<br/>desenvolvido em parceria com <b>IA (Claude)</b> — da ideia ao deploy.
-  </div>
-  <div class="cards">
-    <div class="card">
-      <div class="c-icon">◈</div>
-      <div class="c-title">Frontend</div>
-      <div class="c-body">HTML + CSS + JS puro. Chuva de código, glitch, tubarão ASCII — <b>zero frameworks</b>.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">⚙</div>
-      <div class="c-title">Backend</div>
-      <div class="c-body">Node + Express com banco de dados próprio e <b>eventos em tempo real</b> (SSE) sincronizando as 3 telas.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">♪</div>
-      <div class="c-title">Som</div>
-      <div class="c-body">Todos os efeitos sonoros <b>sintetizados em código</b> (WebAudio) — nenhum arquivo de áudio.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">▲</div>
-      <div class="c-title">Deploy</div>
-      <div class="c-body">Publicado na nuvem com <b>QR code</b> — qualquer celular entra na hora, sem instalar nada.</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ SLIDE 5: O JOGO ============ -->
-<div class="slide">
-  <div class="kicker">// 04 · O JOGO</div>
-  <h2>COMO FUNCIONA</h2>
-  <div class="cards">
-    <div class="card">
-      <div class="c-icon">◉</div>
-      <div class="c-title">1 · Oráculo</div>
-      <div class="c-body">O telão sorteia <b>ordem e cases</b> ao vivo, com suspense estilo Matrix.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">▶</div>
-      <div class="c-title">2 · Pitch</div>
-      <div class="c-body"><b>5 minutos</b> por case, cronômetro no telão e materiais de apoio dos projetos.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">$</div>
-      <div class="c-title">3 · Investimento</div>
-      <div class="c-body">QR code → cada pessoa recebe <b>$50k</b> e tem <b>90 segundos</b> pra investir pelo celular.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">★</div>
-      <div class="c-title">4 · Revelação</div>
-      <div class="c-body">Ranking por <b>média por área</b> e o vencedor revelado no telão — com muito suspense.</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ SLIDE 6: IMPACTO (PRINCIPAL) ============ -->
-<div class="slide">
-  <div class="kicker">// 05 · O QUE IMPORTA</div>
-  <h2 style="color: var(--matrix-amber); text-shadow: 0 0 18px var(--matrix-amber);">IMPACTO NO TOWNHALL</h2>
-  <div class="cards">
-    <div class="card">
-      <div class="c-icon">◈</div>
-      <div class="c-title">Todos participam</div>
-      <div class="c-body">Ninguém assiste passivo: <b>cada pessoa investe pelo próprio celular</b> e decide o vencedor.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">◉</div>
-      <div class="c-title">Atenção total</div>
-      <div class="c-body">Pra investir bem, tem que <b>assistir aos pitches</b> — o jogo transforma atenção em estratégia.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">▸</div>
-      <div class="c-title">Gamificação</div>
-      <div class="c-body">A votação vira <b>jogo</b>: dinheiro, tempo, ranking e suspense — celebrando os cases de IA das áreas.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">⚖</div>
-      <div class="c-title">Disputa justa</div>
-      <div class="c-body">Vencedor por <b>média por área</b> (não soma bruta) e bloqueio de voto na própria área — <b>sem puxar sardinha</b>.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">⚡</div>
-      <div class="c-title">Tempo real</div>
-      <div class="c-body">Telão, celulares e admin <b>sincronizados ao vivo</b> — resultado apurado na hora, sem planilha.</div>
-    </div>
-    <div class="card">
-      <div class="c-icon">★</div>
-      <div class="c-title">Momento memorável</div>
-      <div class="c-body">A revelação com suspense vira o <b>ponto alto do townhall</b> — todo mundo prendendo a respiração junto.</div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ SLIDE 7: NÚMEROS ============ -->
-<div class="slide">
-  <div class="kicker">// 06 · NÚMEROS DO PROJETO</div>
-  <h2>SHARKTRIX EM NÚMEROS</h2>
   <div class="bignums">
     <div class="bignum"><div class="n">2h</div><div class="l">da ideia à primeira versão</div></div>
     <div class="bignum"><div class="n">2</div><div class="l">semanas de evolução</div></div>
-    <div class="bignum"><div class="n">6</div><div class="l">áreas · 14 cases no tanque</div></div>
-    <div class="bignum"><div class="n">3</div><div class="l">telas sincronizadas (telão · bank · admin)</div></div>
-    <div class="bignum"><div class="n">100%</div><div class="l">construído com Claude</div></div>
-    <div class="bignum"><div class="n">1</div><div class="l">tubarão solto na Matrix</div></div>
+    <div class="bignum"><div class="n">14</div><div class="l">cases · 6 áreas no tanque</div></div>
+    <div class="bignum"><div class="n">3</div><div class="l">telas sincronizadas ao vivo</div></div>
+    <div class="bignum"><div class="n">90s</div><div class="l">pra investir $50k no celular</div></div>
+    <div class="bignum"><div class="n">100%</div><div class="l">construído com claude</div></div>
   </div>
+
+  <div class="evolution">
+    <span class="step"><b>manhã</b> · a ideia</span>
+    <span class="arrow">›</span>
+    <span class="step"><b>+2h</b> · telão em HTML</span>
+    <span class="arrow">›</span>
+    <span class="step"><b>semana 1</b> · app + banco de dados</span>
+    <span class="arrow">›</span>
+    <span class="step"><b>semana 2</b> · animações, sons e jogo completo</span>
+  </div>
+
+  <div class="impact">
+    <div class="impact-title">★ Impacto no Townhall</div>
+    <div class="impact-grid">
+      <div class="impact-item"><span class="ico">◈</span><span><b>Todos participam:</b> cada pessoa investe pelo próprio celular</span></div>
+      <div class="impact-item"><span class="ico">◉</span><span><b>Atenção total:</b> investir bem exige assistir aos pitches</span></div>
+      <div class="impact-item"><span class="ico">▸</span><span><b>Gamificação:</b> a votação vira jogo — dinheiro, tempo e ranking</span></div>
+      <div class="impact-item"><span class="ico">⚖</span><span><b>Disputa justa:</b> média por área e bloqueio de voto na própria área</span></div>
+      <div class="impact-item"><span class="ico">⚡</span><span><b>Tempo real:</b> resultado apurado na hora, sem planilha</span></div>
+      <div class="impact-item"><span class="ico">★</span><span><b>Momento memorável:</b> revelação com suspense é o ponto alto</span></div>
+    </div>
+  </div>
+
+  <div class="footer">bem-vindo ao tanque · <b>siga o tubarão_</b></div>
 </div>
 
-<!-- ============ SLIDE 8: FIM ============ -->
-<div class="slide">
-  <h1 class="glitch" data-text="SIGA O TUBARÃO">SIGA O TUBARÃO</h1>
-  <div class="tagline">
-    Bem-vindo ao tanque.<br/>
-    <span class="amber">O Oráculo é inevitável, Sr. Bolivar.</span>
-  </div>
-  <pre class="shark-pre" id="shark-end"></pre>
-  <div class="footer-link">sharktrix · matrix + shark tank · townhall edition</div>
-</div>
-
-<script src="/js/shark-ascii.js"></script>
 <script>
-/* ---------------- chuva de código ---------------- */
+/* chuva de código */
 const canvas = document.getElementById("rain");
 const ctx = canvas.getContext("2d");
 const GLYPHS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789Z$#%&+*=<>";
@@ -461,39 +269,23 @@ setInterval(() => {
   }
 }, 45);
 
-/* ---------------- tubarões ---------------- */
-if (window.animateShark) {
-  animateShark(document.getElementById("shark-cover"), 110);
-  animateShark(document.getElementById("shark-end"), 110);
+/* autofit: em desktop garante tudo numa tela só, sem scroll */
+function fitPage() {
+  if (innerWidth <= 980) return; // mobile rola normal
+  const page = document.getElementById("page");
+  page.style.transform = "";
+  let maxBottom = 0;
+  for (const child of page.children) {
+    const r = child.getBoundingClientRect();
+    if (r.height > 0) maxBottom = Math.max(maxBottom, r.bottom);
+  }
+  const avail = innerHeight - 10;
+  if (maxBottom > avail) {
+    page.style.transform = "scale(" + Math.max(0.5, avail / maxBottom) + ")";
+  }
 }
-
-/* ---------------- navegação de slides ---------------- */
-const slides = [...document.querySelectorAll(".slide")];
-let cur = 0;
-const counter = document.getElementById("slide-counter");
-
-function goTo(n) {
-  cur = Math.max(0, Math.min(slides.length - 1, n));
-  slides.forEach((s, i) => s.classList.toggle("active", i === cur));
-  counter.textContent = (cur + 1) + " / " + slides.length;
-}
-
-document.getElementById("nav-next").onclick = () => goTo(cur + 1);
-document.getElementById("nav-prev").onclick = () => goTo(cur - 1);
-
-addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter" || e.key === "PageDown") { e.preventDefault(); goTo(cur + 1); }
-  else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); goTo(cur - 1); }
-  else if (e.key === "Home") goTo(0);
-  else if (e.key === "End") goTo(slides.length - 1);
-});
-
-// clique na metade direita avança, esquerda volta (estilo apresentação)
-addEventListener("click", (e) => {
-  if (e.target.closest("button")) return;
-  if (e.clientX > innerWidth * 0.6) goTo(cur + 1);
-  else if (e.clientX < innerWidth * 0.4) goTo(cur - 1);
-});
+addEventListener("resize", fitPage);
+addEventListener("load", () => { fitPage(); setTimeout(fitPage, 300); });
 </script>
 </body>
 </html>
