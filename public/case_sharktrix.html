@@ -93,7 +93,7 @@
   /* números grandes */
   .bignums {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1.4vh 1vw;
     width: 100%;
     max-width: 1560px;
@@ -161,18 +161,23 @@
     margin-bottom: 1.4vh;
   }
   .impact-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1vh 1.4vw;
-    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.2vh 1.2vw;
   }
   .impact-item {
     display: flex;
-    gap: 0.7vw;
+    gap: 0.6vw;
     align-items: baseline;
-    font-size: clamp(0.75rem, 1.05vw, 1rem);
-    color: rgba(255,255,255,0.88);
+    font-size: clamp(0.95rem, 1.35vw, 1.3rem);
+    font-weight: bold;
+    color: rgba(255,255,255,0.92);
     line-height: 1.5;
+    padding: 1.1vh 1.4vw;
+    border: 1px dashed rgba(255,191,0,0.45);
+    background: rgba(40,28,0,0.35);
+    white-space: nowrap;
   }
   .impact-item .ico { color: var(--matrix-amber); text-shadow: 0 0 8px rgba(255,191,0,0.5); }
   .impact-item b { color: var(--matrix-amber); }
@@ -204,7 +209,6 @@
   <div class="tagline">
     <b>Matrix + Shark Tank</b> — um jogo feito por diversão que virou a plataforma do nosso townhall:
     sorteio com suspense, pitches cronometrados e <b>investimento ao vivo pelo celular</b>.
-    A ideia nasceu numa conversa de manhã; <span class="amber">2 horas depois a primeira versão já rodava</span>.
   </div>
 
   <div class="bignums">
@@ -212,8 +216,7 @@
     <div class="bignum"><div class="n">2</div><div class="l">semanas de evolução</div></div>
     <div class="bignum"><div class="n">14</div><div class="l">cases · 6 áreas no tanque</div></div>
     <div class="bignum"><div class="n">3</div><div class="l">telas sincronizadas ao vivo</div></div>
-    <div class="bignum"><div class="n">$50</div><div class="l">por investidor · agentes $100</div></div>
-    <div class="bignum"><div class="n">100%</div><div class="l">construído com claude</div></div>
+    <div class="bignum"><div class="n">100%</div><div class="l">construído com IA</div></div>
   </div>
 
   <div class="evolution">
@@ -229,12 +232,11 @@
   <div class="impact">
     <div class="impact-title">★ Impacto no Townhall</div>
     <div class="impact-grid">
-      <div class="impact-item"><span class="ico">◈</span><span><b>Todos participam:</b> cada pessoa investe pelo próprio celular</span></div>
-      <div class="impact-item"><span class="ico">◉</span><span><b>Atenção total:</b> investir bem exige assistir aos pitches</span></div>
-      <div class="impact-item"><span class="ico">▸</span><span><b>Gamificação:</b> a votação vira jogo — dinheiro, tempo e ranking</span></div>
-      <div class="impact-item"><span class="ico">⚖</span><span><b>Disputa justa:</b> média por área e bloqueio de voto na própria área</span></div>
-      <div class="impact-item"><span class="ico">⚡</span><span><b>Tempo real:</b> resultado apurado na hora, sem planilha</span></div>
-      <div class="impact-item"><span class="ico">★</span><span><b>Momento memorável:</b> revelação com suspense é o ponto alto</span></div>
+      <div class="impact-item"><span class="ico">◈</span><span>Todos participam</span></div>
+      <div class="impact-item"><span class="ico">◉</span><span>Atenção total</span></div>
+      <div class="impact-item"><span class="ico">▸</span><span>Gamificação</span></div>
+      <div class="impact-item"><span class="ico">⚡</span><span>Tempo real</span></div>
+      <div class="impact-item"><span class="ico">★</span><span>Momento para se divertir</span></div>
     </div>
   </div>
 

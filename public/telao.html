@@ -694,7 +694,7 @@
   }
   #extras-content {
     width: 100%;
-    max-width: 1500px;
+    max-width: min(96vw, 1860px);
     position: relative;
   }
   .extras-header { margin-bottom: 3vh; }
@@ -724,7 +724,7 @@
   #extras-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2vh 2vw;
+    gap: 2.2vh 1.6vw;
   }
   .extra-showcase {
     display: flex;
@@ -803,6 +803,70 @@
     box-shadow: 0 0 14px rgba(0, 255, 65, 0.6);
   }
 
+  /* ============ TABELA DE ATALHOS ============ */
+  #shortcuts-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 8, 2, 0.92);
+    backdrop-filter: blur(3px);
+    padding: 3vh 4vw;
+  }
+  #shortcuts-modal.show { display: flex; }
+  #shortcuts-card {
+    width: min(92vw, 880px);
+    border: 1px solid var(--matrix-green-dim);
+    background: rgba(0, 15, 4, 0.95);
+    box-shadow: 0 0 40px rgba(0, 255, 65, 0.25), inset 0 0 40px rgba(0, 255, 65, 0.04);
+    padding: 3.5vh 2.5vw;
+  }
+  .sc-title {
+    font-size: clamp(1rem, 1.6vw, 1.4rem);
+    letter-spacing: 0.3em;
+    color: var(--matrix-green);
+    text-shadow: 0 0 12px var(--matrix-green);
+    margin-bottom: 2vh;
+    text-transform: uppercase;
+  }
+  .sc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(0.85rem, 1.15vw, 1.05rem);
+  }
+  .sc-table td {
+    padding: 1.1vh 0.8vw;
+    border-bottom: 1px dashed var(--matrix-green-dark);
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.5;
+  }
+  .sc-table tr:last-child td { border-bottom: none; }
+  .sc-table td.k {
+    white-space: nowrap;
+    width: 1%;
+    color: var(--matrix-green);
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+    padding-right: 2vw;
+  }
+  .sc-table b { color: var(--matrix-green); }
+  .sc-hint {
+    margin-top: 2vh;
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    letter-spacing: 0.2em;
+    color: var(--matrix-green-dark);
+    text-align: center;
+  }
+  #shortcuts-corner {
+    position: fixed;
+    bottom: 1.5vh;
+    left: 1.5vw;
+    z-index: 40;
+  }
+
   /* ============ LIGHTBOX (mídia ampliada) ============ */
   #lightbox {
     position: fixed;
@@ -826,8 +890,8 @@
   }
   #lightbox-body img,
   #lightbox-body video {
-    max-width: 96vw;
-    max-height: 86vh;
+    width: 94vw;
+    height: 85vh;
     object-fit: contain;
     box-shadow: 0 0 60px rgba(0, 255, 65, 0.35);
     border: 1px solid var(--matrix-green-dark);
@@ -1004,7 +1068,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.4vh 1.6vw;
-    max-width: 1300px;
+    max-width: 1620px;
     width: 100%;
   }
   .rule-card {
@@ -1023,7 +1087,7 @@
     box-shadow: 0 0 40px rgba(0, 255, 65, 0.35), inset 0 0 40px rgba(0, 255, 65, 0.07);
   }
   .rule-icon {
-    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-size: calc(var(--rules-fs, 17px) * 2);
     color: var(--matrix-green);
     text-shadow: 0 0 15px var(--matrix-green), 0 0 40px rgba(0, 255, 65, 0.4);
     text-align: center;
@@ -1032,7 +1096,7 @@
     align-self: center;
   }
   .rule-title {
-    font-size: clamp(1rem, 1.6vw, 1.4rem);
+    font-size: calc(var(--rules-fs, 17px) * 1.25);
     letter-spacing: 0.2em;
     color: var(--matrix-green);
     text-shadow: 0 0 10px var(--matrix-green);
@@ -1041,7 +1105,7 @@
     margin-bottom: 0.6vh;
   }
   .rule-body {
-    font-size: clamp(0.78rem, 1.05vw, 0.98rem);
+    font-size: var(--rules-fs, 17px);
     color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0.02em;
     line-height: 1.5;
@@ -1550,7 +1614,7 @@
       <div class="qr-mega-instructions">
         <div>1. abra o navegador do celular</div>
         <div>2. entre com seu nome + área</div>
-        <div>3. você tem <b>$50</b> — invista no seu ritmo</div>
+        <div>3. você tem <b>$50</b> — decida rápido, o tanque não espera</div>
         <div>4. pode investir em <b>quantos cases quiser</b></div>
         <div>5. <b>menos no da sua própria área</b></div>
         <div>6. investiu, <b>já era</b> — sem devolução</div>
@@ -1595,8 +1659,8 @@
       <div class="rule-icon">◉</div>
       <div class="rule-title">3 · TEMPO</div>
       <div class="rule-body">
-        <b>Sem pressa</b> — invista no seu ritmo, o cronômetro só marca o tempo.<br/>
-        <span class="rule-warn">Terminou? Aperte <b>✓ FINALIZAR</b> no app. O resultado sai quando todos finalizarem.</span>
+        <b>O tanque não espera</b> — decida rápido e invista logo.<br/>
+        <span class="rule-warn">Terminou? Aperte <b>✓ FINALIZAR</b> no app: o resultado só sai quando <b>todos finalizarem</b> — não segure a fila.</span>
       </div>
     </div>
 
@@ -1660,6 +1724,28 @@
     <div id="reveal-others"></div>
   </div>
 </div>
+
+<!-- ===================== TABELA DE ATALHOS ===================== -->
+<div id="shortcuts-modal">
+  <div id="shortcuts-card">
+    <div class="sc-title">// ATALHOS DO TELÃO</div>
+    <table class="sc-table">
+      <tbody>
+        <tr><td class="k">ENTER · ESPAÇO</td><td>avançar — consultar o oráculo, iniciar sorteio, próxima tela</td></tr>
+        <tr><td class="k">5</td><td>cronômetro: marcar <b>5 minutos</b></td></tr>
+        <tr><td class="k">3</td><td>cronômetro: marcar <b>3 minutos</b></td></tr>
+        <tr><td class="k">P</td><td>cronômetro: <b>play / pause</b></td></tr>
+        <tr><td class="k">M</td><td><b>materiais de apoio</b>: abrir / fechar (na tela do case)</td></tr>
+        <tr><td class="k">R</td><td><b>voltar ao oráculo</b>: re-sortear outro case da área (na tela do case)</td></tr>
+        <tr><td class="k">ESC</td><td>fechar janelas — materiais, imagem ampliada ou esta tabela</td></tr>
+        <tr><td class="k">H · ?</td><td>mostrar / esconder esta tabela de atalhos</td></tr>
+      </tbody>
+    </table>
+    <div class="sc-hint">aperte [ H ] a qualquer momento pra rever os atalhos</div>
+  </div>
+</div>
+
+<button class="ghost-btn" id="shortcuts-corner">? atalhos_</button>
 
 <!-- ===================== LIGHTBOX (ampliar material de apoio) ===================== -->
 <div id="lightbox">
@@ -2286,9 +2372,9 @@ function contentBottomPx(el) {
 
 function fitScreen(el) {
   if (!el) return;
-  // A tela do case NUNCA é escalada por transform (escala quebrava os botões
-  // absolute e encolhia o texto todo). Lá o ajuste é pelo tamanho da fonte.
+  // Telas com fit por TAMANHO DE FONTE (adapta à resolução, sem transform):
   if (el.id === "screen-winner") { fitCaseContent(); return; }
+  if (el.id === "screen-rules-draw" || el.id === "screen-rules-bank") { fitRulesContent(el); return; }
   el.style.transform = "";
   el.classList.add("fit-scaled");
   // 12px de respiro no rodapé pra nada encostar na borda
@@ -2298,6 +2384,34 @@ function fitScreen(el) {
     const k = Math.max(0.45, avail / needed);
     el.style.transform = "scale(" + k + ")";
   }
+}
+
+/* Fit das telas de REGRAS: mesma lógica dos cases — fonte grande em monitor
+   grande, reduz só o necessário pra caber sem scroll. */
+function rulesFsBounds() {
+  const h = window.innerHeight;
+  const w = window.innerWidth;
+  const max = Math.round(Math.min(Math.max(16, h * 0.028), w * 0.015, 34));
+  const min = Math.round(Math.max(10, h * 0.014));
+  return { max: Math.max(max, min + 2), min };
+}
+function fitRulesContent(screen) {
+  if (!screen) return;
+  screen.style.transform = "";
+  const avail = window.innerHeight - 10;
+  const bounds = rulesFsBounds();
+  let fs = bounds.max;
+  screen.style.setProperty("--rules-fs", fs + "px");
+  while (fs > bounds.min && contentBottomPx(screen) > avail) {
+    fs -= 1;
+    screen.style.setProperty("--rules-fs", fs + "px");
+  }
+  const finalBottom = contentBottomPx(screen);
+  if (finalBottom > avail) {
+    screen.style.transformOrigin = "top center";
+    screen.style.transform = "scale(" + Math.max(0.5, avail / finalBottom) + ")";
+  }
+  screen.dataset.fitted = "1";
 }
 
 /* Fit adaptativo da tela do case: case com pouco texto fica com fonte
@@ -2358,6 +2472,10 @@ setInterval(() => {
     if (!active.dataset.fitted || contentBottomPx(active) > limit + 2) {
       fitCaseContent();
     }
+  } else if (active && (active.id === "screen-rules-draw" || active.id === "screen-rules-bank")) {
+    if (!active.dataset.fitted || contentBottomPx(active) > window.innerHeight - 8) {
+      fitRulesContent(active);
+    }
   } else if (active && !active.style.transform &&
              contentBottomPx(active) > window.innerHeight - 10) {
     fitScreen(active);
@@ -2377,6 +2495,7 @@ function showScreen(name) {
   Object.values(screens).forEach((s) => {
     s.classList.remove("active");
     s.style.transform = "";
+    delete s.dataset.fitted; // tela nova = refit garantido pelo watchdog
   });
   screens[name].classList.add("active");
   resetCorner.classList.toggle("show", name !== "intro");
@@ -3036,19 +3155,61 @@ document.getElementById("pill-blue").onclick = () => {
 };
 
 /* ---------------- TECLADO ---------------- */
+/* ---------------- TABELA DE ATALHOS ---------------- */
+const shortcutsModal = document.getElementById("shortcuts-modal");
+function toggleShortcuts(force) {
+  const show = force !== undefined ? force : !shortcutsModal.classList.contains("show");
+  shortcutsModal.classList.toggle("show", show);
+  if (show) sfxKey();
+}
+document.getElementById("shortcuts-corner").onclick = () => toggleShortcuts();
+shortcutsModal.addEventListener("click", (e) => {
+  if (e.target === shortcutsModal) toggleShortcuts(false);
+});
+
+/* ---------------- TECLADO (todos os atalhos) ---------------- */
 addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && lightboxEl.classList.contains("show")) {
-    e.preventDefault();
-    closeLightbox();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const key = e.key.toLowerCase();
+
+  // ESC fecha na ordem: imagem ampliada → materiais → tabela de atalhos
+  if (e.key === "Escape") {
+    if (lightboxEl.classList.contains("show")) { e.preventDefault(); closeLightbox(); return; }
+    if (extrasModal.classList.contains("show")) { e.preventDefault(); closeExtras(); return; }
+    if (shortcutsModal.classList.contains("show")) { e.preventDefault(); toggleShortcuts(false); return; }
     return;
   }
-  if (e.key === "Escape" && extrasModal.classList.contains("show")) {
+
+  // H ou ? — tabela de atalhos (a qualquer momento)
+  if (key === "h" || e.key === "?") {
     e.preventDefault();
-    closeExtras();
+    toggleShortcuts();
     return;
   }
+
+  // Atalhos do cronômetro — valem na tela do case (e com materiais abertos,
+  // já que o timer acompanha o modal)
+  const onWinner = screens.winner.classList.contains("active");
+  if (onWinner) {
+    if (e.key === "5") { e.preventDefault(); sfxKey(); setTimer(5); return; }
+    if (e.key === "3") { e.preventDefault(); sfxKey(); setTimer(3); return; }
+    if (key === "p") { e.preventDefault(); toggleTimer(); return; }
+    if (key === "m") {
+      e.preventDefault();
+      if (extrasModal.classList.contains("show")) closeExtras();
+      else if (winnerMoreBtn.style.display !== "none") openExtras();
+      return;
+    }
+    if (key === "r" && !extrasModal.classList.contains("show") &&
+        winnerRedraw.style.visibility === "visible") {
+      e.preventDefault();
+      winnerRedraw.click();
+      return;
+    }
+  }
+
   if (e.key === "Enter" || e.key === " ") {
-    if (extrasModal.classList.contains("show")) return; // não vaza pro botão next
+    if (extrasModal.classList.contains("show") || shortcutsModal.classList.contains("show")) return;
     if (screens.rulesDraw && screens.rulesDraw.classList.contains("active")) {
       e.preventDefault();
       document.getElementById("rules-draw-next").click();
